@@ -604,8 +604,39 @@ async def setup_imap(request: IMAPSetupRequest):
         os.environ['GMAIL_EMAIL'] = request.email
         os.environ['GMAIL_APP_PASSWORD'] = request.app_password
         
+        # Also persist to .env file for restart persistence
+        env_file_path = os.path.join(os.path.dirname(__file__), '.env')
+        env_lines = []
+        
+        # Read existing .env file
+        if os.path.exists(env_file_path):
+            with open(env_file_path, 'r') as f:
+                env_lines = f.readlines()
+        
+        # Update or add GMAIL credentials
+        gmail_email_found = False
+        gmail_password_found = False
+        
+        for i, line in enumerate(env_lines):
+            if line.startswith('GMAIL_EMAIL='):
+                env_lines[i] = f'GMAIL_EMAIL="{request.email}"\n'
+                gmail_email_found = True
+            elif line.startswith('GMAIL_APP_PASSWORD='):
+                env_lines[i] = f'GMAIL_APP_PASSWORD="{request.app_password}"\n'
+                gmail_password_found = True
+        
+        # Add missing entries
+        if not gmail_email_found:
+            env_lines.append(f'GMAIL_EMAIL="{request.email}"\n')
+        if not gmail_password_found:
+            env_lines.append(f'GMAIL_APP_PASSWORD="{request.app_password}"\n')
+        
+        # Write back to .env file
+        with open(env_file_path, 'w') as f:
+            f.writelines(env_lines)
+        
         # Create new IMAP service instance with updated credentials
-        test_imap = IMAPService()
+        test_imap = IMAPService(request.email, request.app_password)
         test_result = await test_imap.test_connection()
         
         if test_result['status'] == 'success':
@@ -615,7 +646,7 @@ async def setup_imap(request: IMAPSetupRequest):
             
             return {
                 'success': True,
-                'message': 'IMAP connection configured successfully',
+                'message': 'IMAP connection configured successfully and persisted',
                 'connection_test': test_result
             }
         else:
