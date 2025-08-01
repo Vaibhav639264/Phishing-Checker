@@ -499,6 +499,29 @@ Date: {email_data.get('date', '')}
     except Exception as e:
         logger.error(f"❌ Error processing monitored email: {str(e)}")
 
+@api_router.get("/analyses/{analysis_id}")
+async def get_analysis_details(analysis_id: str):
+    """Get detailed analysis of a specific email"""
+    try:
+        logger.info(f"🔍 Fetching analysis details for ID: {analysis_id}")
+        
+        # Find the analysis in the database
+        analysis = await db.email_analyses.find_one({"id": analysis_id})
+        
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        return {
+            'success': True,
+            'analysis': EmailAnalysisResult(**analysis)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get analysis details: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve analysis: {str(e)}")
+
 @api_router.get("/analyses")
 async def get_analyses():
     """Get all email analyses"""
