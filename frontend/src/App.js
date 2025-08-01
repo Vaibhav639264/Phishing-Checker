@@ -1392,7 +1392,11 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
               ) : (
                 <div className="space-y-3">
                   {analyses.map((analysis) => (
-                    <div key={analysis.id} className="border border-gray-200 rounded-lg p-3">
+                    <div 
+                      key={analysis.id} 
+                      className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => fetchAnalysisDetails(analysis.id)}
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-medium text-gray-900 text-sm truncate">
                           {analysis.filename}
@@ -1403,6 +1407,9 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
                       </div>
                       <p className="text-xs text-gray-600">
                         {new Date(analysis.timestamp).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Click to view details
                       </p>
                     </div>
                   ))}
