@@ -52,10 +52,34 @@ function App() {
 
   const checkGmailStatus = async () => {
     try {
-      const response = await axios.get(`${API}/gmail/status`);
+      let response;
+      if (connectionMethod === 'imap') {
+        response = await axios.get(`${API}/imap/status`);
+      } else {
+        response = await axios.get(`${API}/gmail/status`);
+      }
       setGmailStatus(response.data);
     } catch (error) {
       console.error('Error checking Gmail status:', error);
+    }
+  };
+
+  const setupImap = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/imap/setup`, imapConfig);
+      
+      if (response.data.success) {
+        alert('IMAP setup successful! You can now start monitoring.');
+        await checkGmailStatus();
+        setShowImapSetup(false);
+      } else {
+        alert('IMAP setup failed: ' + response.data.message);
+      }
+    } catch (error) {
+      alert(`IMAP setup failed: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
