@@ -353,11 +353,11 @@ Please analyze this email and provide a comprehensive threat assessment.
                 'threat_level': 'UNKNOWN'
             }
 
-    def calculate_threat_level(self, results: Dict) -> str:
-        """Calculate overall threat level"""
+    def calculate_threat_level_advanced(self, results: Dict) -> str:
+        """Calculate threat level with advanced security analysis"""
         risk_score = 0
         
-        # URL analysis
+        # Basic analysis scoring
         if 'url_analysis' in results:
             for finding in results['url_analysis']:
                 if finding['risk'] == 'HIGH':
@@ -365,7 +365,6 @@ Please analyze this email and provide a comprehensive threat assessment.
                 elif finding['risk'] == 'MEDIUM':
                     risk_score += 15
 
-        # Sender analysis  
         if 'sender_analysis' in results:
             for finding in results['sender_analysis']:
                 if finding['risk'] == 'HIGH':
@@ -373,22 +372,49 @@ Please analyze this email and provide a comprehensive threat assessment.
                 elif finding['risk'] == 'MEDIUM':
                     risk_score += 10
 
-        # Social engineering
         if 'urgency_score' in results:
             risk_score += results['urgency_score'] * 5
 
-        # Attachments
         if 'attachment_analysis' in results:
             for finding in results['attachment_analysis']:
                 if finding['risk'] == 'HIGH':
                     risk_score += 35
 
-        # Determine threat level
-        if risk_score >= 70:
+        # Advanced analysis scoring (higher weight)
+        if 'advanced_url_analysis' in results:
+            for finding in results['advanced_url_analysis']:
+                if finding['risk_level'] == 'CRITICAL':
+                    risk_score += 50
+                elif finding['risk_level'] == 'HIGH':
+                    risk_score += 35
+                elif finding['risk_level'] == 'MEDIUM':
+                    risk_score += 20
+
+        if 'advanced_attachment_analysis' in results:
+            for finding in results['advanced_attachment_analysis']:
+                if finding['risk_level'] == 'CRITICAL':
+                    risk_score += 60
+                elif finding['risk_level'] == 'HIGH':
+                    risk_score += 40
+                elif finding['risk_level'] == 'MEDIUM':
+                    risk_score += 25
+
+        # Overall security assessment boost
+        if 'overall_risk_level' in results:
+            overall_risk = results['overall_risk_level']
+            if overall_risk == 'CRITICAL':
+                risk_score += 100
+            elif overall_risk == 'HIGH':
+                risk_score += 50
+            elif overall_risk == 'MEDIUM':
+                risk_score += 25
+
+        # Determine final threat level
+        if risk_score >= 100:
             return 'CRITICAL'
-        elif risk_score >= 45:
+        elif risk_score >= 70:
             return 'HIGH'
-        elif risk_score >= 20:
+        elif risk_score >= 40:
             return 'MEDIUM'
         else:
             return 'LOW'
