@@ -362,6 +362,30 @@ Please analyze this email and provide a comprehensive threat assessment.
                 logger.error(f"Security assessment failed: {str(e)}")
                 results['security_assessment_error'] = str(e)
             
+            # THREAD ANALYSIS - Analyze email thread/trail
+            try:
+                logger.info("🧵 Starting email thread analysis")
+                thread_analysis = await thread_analyzer.analyze_email_thread(email_content, self)
+                results['thread_analysis'] = thread_analysis
+                
+                # Escalate threat level if thread analysis reveals higher risk
+                thread_threat_level = thread_analysis.get('thread_threat_level', 'LOW')
+                if thread_threat_level in ['HIGH', 'CRITICAL']:
+                    logger.warning(f"🧵 Thread analysis escalated threat to: {thread_threat_level}")
+                    # Calculate current threat level from existing results
+                    current_threat_level = self.calculate_threat_level_advanced(results)
+                    
+                    # Use higher of individual or thread threat level
+                    threat_scores = {'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'CRITICAL': 4}
+                    if (threat_scores.get(thread_threat_level, 0) > 
+                        threat_scores.get(current_threat_level, 0)):
+                        results['threat_escalated_by_thread'] = True
+                        results['original_threat_level'] = current_threat_level
+                        
+            except Exception as e:
+                logger.error(f"Thread analysis failed: {str(e)}")
+                results['thread_analysis_error'] = str(e)
+            
             # LLM Analysis (enhanced with advanced findings)
             llm_results = await self.analyze_with_llm(email_content, results)
             results.update(llm_results)
