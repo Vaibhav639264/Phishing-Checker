@@ -371,6 +371,9 @@ Please analyze this email and provide a comprehensive threat assessment.
 # Initialize Gmail service
 gmail_service = GmailService()
 
+# Initialize IMAP service
+imap_service = IMAPService()
+
 # Initialize detector
 detector = PhishingDetector()
 
