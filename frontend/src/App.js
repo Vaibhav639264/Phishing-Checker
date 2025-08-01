@@ -365,10 +365,14 @@ function App() {
                 <input
                   type="password"
                   value={imapConfig.app_password}
-                  onChange={(e) => setImapConfig({...imapConfig, app_password: e.target.value})}
+                  onChange={(e) => setImapConfig({...imapConfig, app_password: e.target.value.replace(/\s+/g, '')})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="16-character app password"
+                  placeholder="16-character app password (no spaces)"
+                  maxLength="16"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Format: abcdefghijklmnop (16 characters, no spaces)
+                </p>
               </div>
             </div>
 
