@@ -367,6 +367,9 @@ Please analyze this email and provide a comprehensive threat assessment.
         else:
             return 'LOW'
 
+# Initialize Gmail service
+gmail_service = GmailService()
+
 # Initialize detector
 detector = PhishingDetector()
 
