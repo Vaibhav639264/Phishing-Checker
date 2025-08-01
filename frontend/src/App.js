@@ -316,6 +316,76 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
     }
   };
 
+  // Enterprise functions
+  const addEnterpriseAccount = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/enterprise/accounts/add`, newAccount);
+      
+      if (response.data.success) {
+        alert(`✅ Account added: ${newAccount.employee_name || newAccount.email}`);
+        setNewAccount({
+          email: '',
+          app_password: '',
+          employee_name: '',
+          department: '',
+          alert_email: ''
+        });
+        await fetchEnterpriseData();
+      }
+    } catch (error) {
+      alert(`❌ Failed to add account: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startAccountMonitoring = async (email) => {
+    try {
+      const response = await axios.post(`${API}/enterprise/accounts/${email}/start-monitoring`);
+      alert(`✅ ${response.data.message}`);
+      await fetchEnterpriseData();
+    } catch (error) {
+      alert(`❌ Failed to start monitoring: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
+  const stopAccountMonitoring = async (email) => {
+    try {
+      const response = await axios.post(`${API}/enterprise/accounts/${email}/stop-monitoring`);
+      alert(`✅ ${response.data.message}`);
+      await fetchEnterpriseData();
+    } catch (error) {
+      alert(`❌ Failed to stop monitoring: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
+  const startAllMonitoring = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/enterprise/monitoring/start-all`);
+      alert(`✅ ${response.data.message}`);
+      await fetchEnterpriseData();
+    } catch (error) {
+      alert(`❌ Failed to start monitoring: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stopAllMonitoring = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/enterprise/monitoring/stop-all`);
+      alert(`✅ ${response.data.message}`);
+      await fetchEnterpriseData();
+    } catch (error) {
+      alert(`❌ Failed to stop monitoring: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
