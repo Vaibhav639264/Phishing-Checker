@@ -27,6 +27,12 @@ function App() {
     check_interval: 60
   });
   const [showGmailSetup, setShowGmailSetup] = useState(false);
+  const [showImapSetup, setShowImapSetup] = useState(false);
+  const [imapConfig, setImapConfig] = useState({
+    email: '',
+    app_password: ''
+  });
+  const [connectionMethod, setConnectionMethod] = useState('imap'); // 'gmail' or 'imap'
   const [manualScanLoading, setManualScanLoading] = useState(false);
   const [scanResults, setScanResults] = useState(null);
 
