@@ -61,18 +61,124 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def extract_email_data(email_message):
-    """Extract basic email data from email message"""
+    """Extract comprehensive email data including trails and encrypted content"""
+    import base64
+    import quopri
+    
+    def decode_content(content, encoding=None):
+        """Decode email content based on encoding"""
+        try:
+            if encoding and encoding.lower() == 'base64':
+                return base64.b64decode(content).decode('utf-8', errors='ignore')
+            elif encoding and encoding.lower() == 'quoted-printable':
+                return quopri.decodestring(content).decode('utf-8', errors='ignore')
+            elif isinstance(content, bytes):
+                return content.decode('utf-8', errors='ignore')
+            return str(content)
+        except Exception as e:
+            logger.warning(f"Failed to decode content: {str(e)}")
+            return str(content)
+    
+    def extract_all_parts(msg, parts_list=None):
+        """Recursively extract all email parts including attachments"""
+        if parts_list is None:
+            parts_list = []
+        
+        if msg.is_multipart():
+            for part in msg.walk():
+                if not part.is_multipart():
+                    content_type = part.get_content_type()
+                    content_disposition = part.get('Content-Disposition', '')
+                    encoding = part.get('Content-Transfer-Encoding', '')
+                    
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        decoded_content = decode_content(payload, encoding)
+                        parts_list.append({
+                            'content_type': content_type,
+                            'content': decoded_content,
+                            'disposition': content_disposition,
+                            'filename': part.get_filename() or '',
+                            'size': len(decoded_content)
+                        })
+        else:
+            # Single part message
+            encoding = msg.get('Content-Transfer-Encoding', '')
+            payload = msg.get_payload(decode=True)
+            if payload:
+                decoded_content = decode_content(payload, encoding)
+                parts_list.append({
+                    'content_type': msg.get_content_type(),
+                    'content': decoded_content,
+                    'disposition': '',
+                    'filename': '',
+                    'size': len(decoded_content)
+                })
+        
+        return parts_list
+    
+    # Extract all parts
+    all_parts = extract_all_parts(email_message)
+    
+    # Combine all text content
+    full_body = ""
+    attachments = []
+    html_body = ""
+    
+    for part in all_parts:
+        if part['content_type'].startswith('text/plain'):
+            full_body += part['content'] + "\n\n"
+        elif part['content_type'].startswith('text/html'):
+            html_body += part['content'] + "\n\n"
+        elif part['filename']:  # Attachment
+            attachments.append({
+                'filename': part['filename'],
+                'content_type': part['content_type'],
+                'size': part['size'],
+                'content_preview': part['content'][:200] + '...' if len(part['content']) > 200 else part['content']
+            })
+    
+    # Extract email trail from body (look for forwarded messages)
+    email_trail = []
+    trail_patterns = [
+        r'From:.*?To:.*?Subject:.*?Date:.*?(?=From:|$)',  # Standard forwarded format
+        r'---------- Forwarded message ---------.*?(?=---------- Forwarded message|$)',
+        r'> From:.*?> To:.*?> Subject:.*?> Date:.*?(?=> From:|$)',  # Quoted format
+    ]
+    
+    for pattern in trail_patterns:
+        import re
+        matches = re.findall(pattern, full_body, re.DOTALL | re.MULTILINE)
+        for match in matches:
+            if len(match.strip()) > 50:  # Only meaningful content
+                email_trail.append({
+                    'content': match.strip(),
+                    'type': 'forwarded_message',
+                    'extracted_by': pattern
+                })
+    
     return {
         'id': email_message.get('Message-ID', str(uuid.uuid4())),
         'from': email_message.get('From', ''),
         'to': email_message.get('To', ''),
+        'cc': email_message.get('Cc', ''),
+        'bcc': email_message.get('Bcc', ''),
         'subject': email_message.get('Subject', ''),
         'date': email_message.get('Date', ''),
         'reply_to': email_message.get('Reply-To', ''),
         'return_path': email_message.get('Return-Path', ''),
         'message_id': email_message.get('Message-ID', ''),
-        'body': email_message.get_payload() if not email_message.is_multipart() else '',
-        'headers': dict(email_message.items())
+        'received': email_message.get_all('Received') or [],
+        'body': full_body.strip(),
+        'html_body': html_body.strip(),
+        'attachments': attachments,
+        'email_trail': email_trail,
+        'all_parts': all_parts,
+        'headers': dict(email_message.items()),
+        'content_encoding': email_message.get('Content-Transfer-Encoding', ''),
+        'content_type': email_message.get_content_type(),
+        'is_multipart': email_message.is_multipart(),
+        'total_parts': len(all_parts)
     }
 
 @api_router.get("/")
