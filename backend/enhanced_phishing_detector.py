@@ -560,4 +560,3 @@ Please provide:
             logger.error(f"❌ LLM analysis failed: {str(e)}")
             return "LLM analysis unavailable - relying on pattern-based detection"
 
-import os  # Add this import at the top
