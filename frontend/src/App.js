@@ -62,15 +62,40 @@ function App() {
     fetchAnalyses();
     checkGmailStatus();
     fetchDashboardStats();
+    fetchEnterpriseData();
     
     // Update dashboard stats every 30 seconds
     const interval = setInterval(() => {
       fetchDashboardStats();
       checkGmailStatus();
+      fetchEnterpriseData();
     }, 30000);
     
     return () => clearInterval(interval);
   }, []);
+
+  const fetchEnterpriseData = async () => {
+    try {
+      const [accountsRes, statsRes] = await Promise.all([
+        axios.get(`${API}/enterprise/accounts`),
+        axios.get(`${API}/enterprise/stats`)
+      ]);
+      
+      setEnterpriseAccounts(accountsRes.data.accounts || []);
+      setEnterpriseStats(statsRes.data.enterprise_stats || {});
+    } catch (error) {
+      console.error('Error fetching enterprise data:', error);
+    }
+  };
+
+  const fetchBlockedEmails = async () => {
+    try {
+      const response = await axios.get(`${API}/enterprise/blocked-emails?limit=50`);
+      setBlockedEmails(response.data.blocked_emails || []);
+    } catch (error) {
+      console.error('Error fetching blocked emails:', error);
+    }
+  };
 
   const fetchDashboardStats = async () => {
     try {
