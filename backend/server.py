@@ -19,6 +19,7 @@ from gmail_service import GmailService
 from imap_service import IMAPService
 from real_time_monitor import email_monitor
 from advanced_scanner import AdvancedSecurityScanner
+from multi_account_manager import get_multi_account_manager
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
