@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Email Phishing Detection Tool
-Tests the /api/analyze-email endpoint and related functionality
+Backend API Testing for Enhanced Email Phishing Detection Tool
+Tests IMAP integration, detection engine, monitoring, and alert systems
 """
 
 import requests
