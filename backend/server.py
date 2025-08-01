@@ -791,24 +791,6 @@ PayPal Security Team
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Debug analysis failed: {str(e)}")
 
-async def start_imap_monitoring_task(alert_email: str, check_interval: int = 60):
-    """Background task for IMAP monitoring"""
-    try:
-        email_monitor.alert_email = alert_email
-        email_monitor.monitoring = True
-        
-        logger.info(f"Starting IMAP monitoring task with alert email: {alert_email}")
-        
-        # Use IMAP service for monitoring
-        await imap_service.monitor_new_emails(
-            callback_func=email_monitor.process_new_email,
-            check_interval=check_interval
-        )
-        
-    except Exception as e:
-        logger.error(f"IMAP monitoring task failed: {str(e)}")
-        email_monitor.monitoring = False
-
 @api_router.post("/imap/manual-scan")
 async def manual_scan_imap(request: ManualScanRequest):
     """Manually scan recent emails via IMAP"""
