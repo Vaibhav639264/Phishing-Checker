@@ -490,6 +490,21 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
                   >
                     Dashboard
                   </button>
+                  <button
+                    onClick={() => setShowEnterprisePanel(!showEnterprisePanel)}
+                    className="px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200"
+                  >
+                    Enterprise
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowBlockedEmails(!showBlockedEmails);
+                      if (!showBlockedEmails) fetchBlockedEmails();
+                    }}
+                    className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                  >
+                    Blocked Emails
+                  </button>
                 </>
               )}
             </div>
