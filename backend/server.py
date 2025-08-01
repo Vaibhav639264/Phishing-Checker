@@ -48,6 +48,18 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+class GmailSetupRequest(BaseModel):
+    client_id: str
+    client_secret: str
+    refresh_token: Optional[str] = None
+
+class MonitoringRequest(BaseModel):
+    alert_email: str
+    check_interval: Optional[int] = 60
+
+class ManualScanRequest(BaseModel):
+    max_emails: Optional[int] = 50
+
 # Phishing Detection Engine
 class PhishingDetector:
     def __init__(self):
