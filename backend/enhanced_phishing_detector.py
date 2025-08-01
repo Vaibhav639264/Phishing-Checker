@@ -428,6 +428,16 @@ class EnhancedPhishingDetector:
         content = (email_data.get('subject', '') + ' ' + email_data.get('body', '')).lower()
         sender = email_data.get('from', '').lower()
         
+        # Extract sender domain
+        sender_domain = ''
+        if '@' in sender:
+            sender_domain = sender.split('@')[-1].split('>')[0].strip()
+        
+        # Skip analysis if from whitelisted legitimate service domains
+        for domain in self.legitimate_service_domains:
+            if sender_domain.endswith(domain) or sender_domain == domain:
+                return 0  # No impersonation score for whitelisted domains
+        
         for brand, keywords in self.brand_keywords.items():
             brand_mentions = 0
             
@@ -448,12 +458,6 @@ class EnhancedPhishingDetector:
                     'apple': ['apple.com', 'icloud.com', 'me.com'],
                     'paypal': ['paypal.com', 'paypal.co.uk']
                 }
-                
-                sender_domain = ''
-                if '@' in sender:
-                    # Extract domain more carefully
-                    domain_part = sender.split('@')[-1].split('>')[0].strip()
-                    sender_domain = domain_part
                 
                 # More sophisticated domain matching
                 if brand in legitimate_domains:
