@@ -60,6 +60,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def extract_email_data(email_message):
+    """Extract basic email data from email message"""
+    return {
+        'id': email_message.get('Message-ID', str(uuid.uuid4())),
+        'from': email_message.get('From', ''),
+        'to': email_message.get('To', ''),
+        'subject': email_message.get('Subject', ''),
+        'date': email_message.get('Date', ''),
+        'reply_to': email_message.get('Reply-To', ''),
+        'return_path': email_message.get('Return-Path', ''),
+        'message_id': email_message.get('Message-ID', ''),
+        'body': email_message.get_payload() if not email_message.is_multipart() else '',
+        'headers': dict(email_message.items())
+    }
+
 @api_router.get("/")
 async def root():
     return {"message": "Enhanced Email Phishing Detection API"}
