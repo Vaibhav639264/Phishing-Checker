@@ -417,31 +417,48 @@ class EnhancedPhishingDetector:
             if brand_mentions >= 2:  # Multiple mentions suggest impersonation
                 # Check if sender domain is legitimate for this brand
                 legitimate_domains = {
-                    'microsoft': ['microsoft.com', 'outlook.com', 'office.com'],
-                    'google': ['google.com', 'gmail.com'],
-                    'amazon': ['amazon.com'],
-                    'apple': ['apple.com', 'icloud.com'],
-                    'paypal': ['paypal.com']
+                    'microsoft': ['microsoft.com', 'outlook.com', 'office.com', 'live.com', 'hotmail.com'],
+                    'google': ['google.com', 'gmail.com', 'accounts.google.com', 'mail.google.com', 'security.google.com'],
+                    'amazon': ['amazon.com', 'amazon.co.uk', 'amazon.in', 'ses.amazonaws.com'],
+                    'apple': ['apple.com', 'icloud.com', 'me.com'],
+                    'paypal': ['paypal.com', 'paypal.co.uk']
                 }
                 
                 sender_domain = ''
                 if '@' in sender:
-                    sender_domain = sender.split('@')[-1].split('>')[0].strip()
+                    # Extract domain more carefully
+                    domain_part = sender.split('@')[-1].split('>')[0].strip()
+                    sender_domain = domain_part
                 
-                if brand in legitimate_domains and sender_domain not in legitimate_domains[brand]:
-                    impersonation_score = 50  # High score for clear impersonation
-                    score += impersonation_score
+                # More sophisticated domain matching
+                if brand in legitimate_domains:
+                    is_legitimate = False
                     
-                    results['brand_impersonation'].append({
-                        'brand': brand,
-                        'mentions': brand_mentions,
-                        'sender_domain': sender_domain,
-                        'legitimate_domains': legitimate_domains[brand],
-                        'severity': 'CRITICAL',
-                        'score': impersonation_score
-                    })
+                    # Check if it's exactly a legitimate domain
+                    if sender_domain in legitimate_domains[brand]:
+                        is_legitimate = True
+                    else:
+                        # Check if it's a subdomain of a legitimate domain
+                        for legit_domain in legitimate_domains[brand]:
+                            if sender_domain.endswith('.' + legit_domain) or sender_domain == legit_domain:
+                                is_legitimate = True
+                                break
                     
-                    results['detection_reasons'].append(f'Brand impersonation detected: {brand.title()}')
+                    # Only flag as impersonation if NOT from a legitimate domain
+                    if not is_legitimate:
+                        impersonation_score = 50  # High score for clear impersonation
+                        score += impersonation_score
+                        
+                        results['brand_impersonation'].append({
+                            'brand': brand,
+                            'mentions': brand_mentions,
+                            'sender_domain': sender_domain,
+                            'legitimate_domains': legitimate_domains[brand],
+                            'severity': 'CRITICAL',
+                            'score': impersonation_score
+                        })
+                        
+                        results['detection_reasons'].append(f'Brand impersonation detected: {brand.title()} from non-legitimate domain {sender_domain}')
         
         return min(score, 80)
     
