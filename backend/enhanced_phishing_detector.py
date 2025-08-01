@@ -565,25 +565,46 @@ class EnhancedPhishingDetector:
     async def _enhanced_llm_analysis(self, email_data: Dict[str, Any], results: Dict[str, Any]) -> str:
         """Enhanced LLM analysis with specific context"""
         try:
+            # Extract sender domain for context
+            sender = email_data.get('from', '').lower()
+            sender_domain = ''
+            if '@' in sender:
+                sender_domain = sender.split('@')[-1].split('>')[0].strip()
+            
+            # Check if from trusted domain
+            is_trusted_domain = False
+            for domain in self.legitimate_service_domains:
+                if sender_domain.endswith(domain) or sender_domain == domain:
+                    is_trusted_domain = True
+                    break
+            
             chat = LlmChat(
                 api_key=self.gemini_api_key,
                 session_id=f"phishing_analysis_{datetime.now().timestamp()}",
-                system_message="""You are an expert cybersecurity analyst specializing in phishing detection. 
+                system_message="""You are an expert cybersecurity analyst specializing in phishing detection with a focus on ACCURACY and minimizing false positives.
 
-Analyze the provided email for phishing indicators with special attention to:
-1. Office-365/Microsoft credential harvesting attacks
-2. Brand impersonation attempts
-3. Social engineering tactics
-4. Urgency manipulation
-5. Suspicious URLs and domains
+CRITICAL GUIDELINES:
+- Emails from legitimate domains (google.com, microsoft.com, stripe.com, banks, etc.) are usually legitimate
+- Only flag as phishing if there are CLEAR indicators of deception or malicious intent
+- Transaction confirmations, security alerts from legitimate services are usually legitimate
+- Be conservative - when in doubt, classify as legitimate rather than phishing
 
-Provide a detailed assessment with confidence level and specific threat indicators."""
+Analyze for GENUINE phishing indicators:
+1. Obvious brand impersonation from suspicious domains
+2. Credential harvesting attempts with suspicious links
+3. Clear social engineering tactics with urgency + suspicious requests
+4. Suspicious URLs or attachments
+5. Grammar/spelling errors in official communications
+
+Provide balanced, accurate assessment."""
             ).with_model("gemini", "gemini-2.0-flash")
             
             # Prepare comprehensive analysis prompt
+            domain_status = "TRUSTED" if is_trusted_domain else "UNKNOWN"
             analysis_prompt = f"""
-ANALYZE THIS EMAIL FOR PHISHING:
+ANALYZE THIS EMAIL FOR PHISHING (Focus on accuracy, avoid false positives):
 
+SENDER DOMAIN: {sender_domain} ({domain_status})
 SUBJECT: {email_data.get('subject', 'N/A')}
 FROM: {email_data.get('from', 'N/A')}
 BODY: {email_data.get('body', 'N/A')[:1000]}
@@ -595,9 +616,13 @@ CURRENT DETECTION RESULTS:
 - URL Issues: {len(results.get('url_analysis', []))}
 - Brand Impersonation: {len(results.get('brand_impersonation', []))}
 
+IMPORTANT: If this is from a trusted domain ({domain_status}), be extra conservative. Only classify as phishing if there are CLEAR malicious indicators.
+
 Please provide:
 1. Is this a phishing email? (YES/NO with confidence %)
-2. What type of phishing attack is this?
+2. What type of email is this? (legitimate service email, potential phishing, etc.)
+3. Key reasons for your assessment
+4. Recommended action (BLOCK/ALLOW/REVIEW)
 3. Key threat indicators you identify
 4. Recommended threat level (LOW/MEDIUM/HIGH/CRITICAL)
 """
