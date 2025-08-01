@@ -60,8 +60,8 @@ class RobustIMAPService:
         
         return False
     
-    async def test_connection(self) -> Dict[str, Any]:
-        """Test IMAP connection thoroughly"""
+    async def test_connection(self, quick_check: bool = False) -> Dict[str, Any]:
+        """Test IMAP connection thoroughly or quickly"""
         try:
             if not self.email_address or not self.app_password:
                 return {
@@ -70,7 +70,7 @@ class RobustIMAPService:
                     'details': 'Email address and app password are required'
                 }
             
-            logger.info(f"🧪 Testing IMAP connection for {self.email_address}")
+            logger.info(f"🧪 Testing IMAP connection for {self.email_address} (quick: {quick_check})")
             
             # Test connection
             if not self._create_connection():
@@ -81,8 +81,38 @@ class RobustIMAPService:
                 }
             
             try:
-                # Test inbox access
-                status, count = self.mail.select('INBOX')
+                if quick_check:
+                    # Quick check - just verify connection without detailed inbox access
+                    self.close_connection()
+                    return {
+                        'status': 'success',
+                        'message': f'✅ Gmail connection verified for {self.email_address}',
+                        'email': self.email_address,
+                        'quick_check': True
+                    }
+                else:
+                    # Full check - access inbox and count messages
+                    status, count = self.mail.select('INBOX')
+                    if status != 'OK':
+                        return {
+                            'status': 'error',
+                            'message': 'Cannot access Gmail inbox',
+                            'details': 'Connection succeeded but inbox access failed'
+                        }
+                    
+                    # Get message count
+                    status, messages = self.mail.search(None, 'ALL')
+                    message_count = len(messages[0].split()) if messages[0] else 0
+                    
+                    # Close connection
+                    self.close_connection()
+                    
+                    return {
+                        'status': 'success',
+                        'message': f'✅ Gmail connection successful! Found {message_count} messages in inbox.',
+                        'email': self.email_address,
+                        'total_messages': message_count
+                    }
                 if status != 'OK':
                     return {
                         'status': 'error',
