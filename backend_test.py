@@ -12,7 +12,7 @@ from io import BytesIO
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://eabb3dac-4704-4fff-93d4-8cb208baf6ef.preview.emergentagent.com/api"
+BACKEND_URL = "https://ac1d4513-2ed8-469e-a2c0-26e2c8368863.preview.emergentagent.com/api"
 
 def create_sample_phishing_email():
     """Create a realistic phishing email sample for testing"""
