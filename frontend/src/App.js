@@ -1564,30 +1564,59 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Email Info */}
+                  {/* Complete Email Headers */}
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3">Email Information</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">Complete Email Headers</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Subject:</span>
-                        <p className="text-gray-900 mt-1">{selectedAnalysis.email_info?.subject || 'N/A'}</p>
+                        <p className="text-gray-900 mt-1 break-all">{selectedAnalysis.email_info?.subject || 'N/A'}</p>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">From:</span>
-                        <p className="text-gray-900 mt-1">{selectedAnalysis.email_info?.from || 'N/A'}</p>
+                        <p className="text-gray-900 mt-1 break-all">{selectedAnalysis.email_info?.from || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">To:</span>
+                        <p className="text-gray-900 mt-1 break-all">{selectedAnalysis.email_info?.to || 'N/A'}</p>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Date:</span>
                         <p className="text-gray-900 mt-1">{selectedAnalysis.email_info?.date || 'N/A'}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Threat Level:</span>
-                        <span className={`px-2 py-1 rounded text-xs ${getThreatColor(selectedAnalysis.threat_level)}`}>
-                          {selectedAnalysis.threat_level}
-                        </span>
+                        <span className="font-medium text-gray-700">Reply-To:</span>
+                        <p className="text-gray-900 mt-1 break-all">{selectedAnalysis.email_info?.reply_to || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Message-ID:</span>
+                        <p className="text-gray-900 mt-1 break-all text-xs">{selectedAnalysis.email_info?.message_id || 'N/A'}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Threat Level with highlighting */}
+                    <div className="mt-4 p-3 rounded-lg border-2 border-red-200">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-700">Threat Assessment:</span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-3 py-1 rounded text-sm font-medium ${getThreatColor(selectedAnalysis.threat_level)}`}>
+                            {selectedAnalysis.threat_level}
+                          </span>
+                          <span className="text-sm text-gray-600">({selectedAnalysis.confidence_score}% confidence)</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Email Content */}
+                  {selectedAnalysis.email_info?.body && (
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-blue-900 mb-3">📧 Email Content</h3>
+                      <div className="bg-white rounded p-3 max-h-60 overflow-y-auto">
+                        <pre className="whitespace-pre-wrap text-sm text-gray-700">{selectedAnalysis.email_info.body}</pre>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Detection Reasons */}
                   {selectedAnalysis.detection_reasons && selectedAnalysis.detection_reasons.length > 0 && (
