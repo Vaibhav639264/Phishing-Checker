@@ -981,23 +981,57 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">🚫 Blocked Emails ({blockedEmails.length})</h3>
               <div className="flex items-center space-x-3">
-                <button
-                  onClick={downloadReport}
-                  disabled={reportLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
-                >
-                  {reportLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>📊</span>
-                      <span>Download Report</span>
-                    </>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowReportDropdown(!showReportDropdown)}
+                    disabled={reportLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {reportLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>📊</span>
+                        <span>Download Report</span>
+                        <span>▼</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  {showReportDropdown && !reportLoading && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                      <div className="py-1">
+                        <button
+                          onClick={() => {downloadReport('csv'); setShowReportDropdown(false);}}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          📄 CSV Format
+                        </button>
+                        <button
+                          onClick={() => {downloadReport('excel'); setShowReportDropdown(false);}}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          📊 Excel Format
+                        </button>
+                        <button
+                          onClick={() => {downloadReport('json'); setShowReportDropdown(false);}}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          🔗 JSON Format
+                        </button>
+                        <button
+                          onClick={() => {downloadReport('pdf'); setShowReportDropdown(false);}}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          📑 PDF Format
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
                 <button
                   onClick={() => setShowBlockedEmails(false)}
                   className="text-gray-400 hover:text-gray-600"
