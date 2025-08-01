@@ -195,10 +195,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Email upload and analysis API"
-    - "LLM integration with Gemini"
     - "Email upload interface"
     - "Analysis results display"
+    - "Recent analyses sidebar"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
