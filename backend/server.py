@@ -549,6 +549,61 @@ async def get_recent_emails(max_results: int = 10):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get emails: {str(e)}")
 
+# IMAP Integration Endpoints (Alternative to Gmail API)
+@api_router.post("/imap/setup")
+async def setup_imap(request: IMAPSetupRequest):
+    """Setup IMAP connection with Gmail App Password"""
+    try:
+        # Update environment variables
+        os.environ['GMAIL_EMAIL'] = request.email
+        os.environ['GMAIL_APP_PASSWORD'] = request.app_password
+        
+        # Test connection
+        test_result = await imap_service.test_connection()
+        
+        return {
+            'success': test_result['status'] == 'success',
+            'message': 'IMAP connection configured successfully' if test_result['status'] == 'success' else 'IMAP setup failed',
+            'connection_test': test_result
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"IMAP setup failed: {str(e)}")
+
+@api_router.get("/imap/status")
+async def imap_status():
+    """Check IMAP connection status"""
+    try:
+        test_result = await imap_service.test_connection()
+        
+        return {
+            'configured': test_result['status'] == 'success',
+            'monitoring_active': email_monitor.monitoring,
+            **test_result
+        }
+        
+    except Exception as e:
+        return {
+            'configured': False,
+            'monitoring_active': False,
+            'status': 'error',
+            'message': str(e)
+        }
+
+@api_router.get("/imap/recent-emails")
+async def get_recent_emails_imap(max_results: int = 10):
+    """Get recent emails via IMAP"""
+    try:
+        emails = await imap_service.get_recent_emails(max_results)
+        return {
+            'success': True,
+            'emails': emails,
+            'count': len(emails)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get emails: {str(e)}")
+
 # Legacy routes
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
