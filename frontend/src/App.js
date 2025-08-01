@@ -43,6 +43,20 @@ function App() {
   const [connectionMethod, setConnectionMethod] = useState('imap'); // 'gmail' or 'imap'
   const [manualScanLoading, setManualScanLoading] = useState(false);
   const [scanResults, setScanResults] = useState(null);
+  
+  // Enterprise features
+  const [showEnterprisePanel, setShowEnterprisePanel] = useState(false);
+  const [showBlockedEmails, setShowBlockedEmails] = useState(false);
+  const [enterpriseAccounts, setEnterpriseAccounts] = useState([]);
+  const [blockedEmails, setBlockedEmails] = useState([]);
+  const [enterpriseStats, setEnterpriseStats] = useState({});
+  const [newAccount, setNewAccount] = useState({
+    email: '',
+    app_password: '',
+    employee_name: '',
+    department: '',
+    alert_email: ''
+  });
 
   useEffect(() => {
     fetchAnalyses();
