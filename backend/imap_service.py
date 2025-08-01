@@ -300,25 +300,37 @@ For questions, contact your IT Security team.
                 await asyncio.sleep(check_interval)
 
     async def test_connection(self) -> Dict[str, Any]:
-        """Test IMAP connection"""
+        """Test IMAP connection with timeout"""
         try:
+            logger.info(f"🔍 Testing IMAP connection for {self.email_address}")
+            
             success = await self.initialize()
             
             if success:
-                # Get inbox info
-                self.mail.select('INBOX')
-                status, messages = self.mail.search(None, 'ALL')
-                message_count = len(messages[0].split()) if messages[0] else 0
-                
-                # Close connection after test
-                self.close_connection()
-                
-                return {
-                    'status': 'success',
-                    'message': 'IMAP connection successful',
-                    'email': self.email_address,
-                    'total_messages': message_count
-                }
+                # Get inbox info with timeout
+                try:
+                    self.mail.select('INBOX')
+                    status, messages = self.mail.search(None, 'ALL')
+                    message_count = len(messages[0].split()) if messages[0] else 0
+                    
+                    # Close connection after test
+                    self.close_connection()
+                    
+                    logger.info(f"✅ IMAP test successful: {message_count} messages found")
+                    
+                    return {
+                        'status': 'success',
+                        'message': f'IMAP connection successful! Found {message_count} messages in inbox.',
+                        'email': self.email_address,
+                        'total_messages': message_count
+                    }
+                except socket.timeout:
+                    logger.error("❌ IMAP inbox access timeout")
+                    return {
+                        'status': 'error',
+                        'message': 'Connection timeout while accessing inbox',
+                        'details': 'The Gmail server took too long to respond. Please check your internet connection and try again.'
+                    }
             else:
                 return {
                     'status': 'error',
@@ -328,6 +340,8 @@ For questions, contact your IT Security team.
                 
         except imaplib.IMAP4.error as e:
             error_msg = str(e)
+            logger.error(f"❌ IMAP test failed: {error_msg}")
+            
             if 'AUTHENTICATIONFAILED' in error_msg:
                 return {
                     'status': 'error',
@@ -337,9 +351,18 @@ For questions, contact your IT Security team.
             else:
                 return {
                     'status': 'error',
-                    'message': f'IMAP error: {error_msg}'
+                    'message': f'IMAP error: {error_msg}',
+                    'details': 'Please check your Gmail settings and try again.'
                 }
+        except socket.timeout:
+            logger.error("❌ IMAP connection timeout during test")
+            return {
+                'status': 'error',
+                'message': 'Connection timeout',
+                'details': 'Gmail server took too long to respond. Please check your internet connection and try again in a few minutes.'
+            }
         except Exception as e:
+            logger.error(f"❌ IMAP test exception: {str(e)}")
             return {
                 'status': 'error',
                 'message': f'Connection failed: {str(e)}',
