@@ -358,46 +358,50 @@ Please analyze this email and provide a comprehensive threat assessment.
         risk_score = 0
         
         # Basic analysis scoring
-        if 'url_analysis' in results:
+        if 'url_analysis' in results and isinstance(results['url_analysis'], list):
             for finding in results['url_analysis']:
-                if finding['risk'] == 'HIGH':
+                if isinstance(finding, dict) and finding.get('risk') == 'HIGH':
                     risk_score += 30
-                elif finding['risk'] == 'MEDIUM':
+                elif isinstance(finding, dict) and finding.get('risk') == 'MEDIUM':
                     risk_score += 15
 
-        if 'sender_analysis' in results:
+        if 'sender_analysis' in results and isinstance(results['sender_analysis'], list):
             for finding in results['sender_analysis']:
-                if finding['risk'] == 'HIGH':
+                if isinstance(finding, dict) and finding.get('risk') == 'HIGH':
                     risk_score += 25
-                elif finding['risk'] == 'MEDIUM':
+                elif isinstance(finding, dict) and finding.get('risk') == 'MEDIUM':
                     risk_score += 10
 
-        if 'urgency_score' in results:
+        if 'urgency_score' in results and isinstance(results['urgency_score'], (int, float)):
             risk_score += results['urgency_score'] * 5
 
-        if 'attachment_analysis' in results:
+        if 'attachment_analysis' in results and isinstance(results['attachment_analysis'], list):
             for finding in results['attachment_analysis']:
-                if finding['risk'] == 'HIGH':
+                if isinstance(finding, dict) and finding.get('risk') == 'HIGH':
                     risk_score += 35
 
         # Advanced analysis scoring (higher weight)
-        if 'advanced_url_analysis' in results:
+        if 'advanced_url_analysis' in results and isinstance(results['advanced_url_analysis'], list):
             for finding in results['advanced_url_analysis']:
-                if finding['risk_level'] == 'CRITICAL':
-                    risk_score += 50
-                elif finding['risk_level'] == 'HIGH':
-                    risk_score += 35
-                elif finding['risk_level'] == 'MEDIUM':
-                    risk_score += 20
+                if isinstance(finding, dict):
+                    risk_level = finding.get('risk_level', 'LOW')
+                    if risk_level == 'CRITICAL':
+                        risk_score += 50
+                    elif risk_level == 'HIGH':
+                        risk_score += 35
+                    elif risk_level == 'MEDIUM':
+                        risk_score += 20
 
-        if 'advanced_attachment_analysis' in results:
+        if 'advanced_attachment_analysis' in results and isinstance(results['advanced_attachment_analysis'], list):
             for finding in results['advanced_attachment_analysis']:
-                if finding['risk_level'] == 'CRITICAL':
-                    risk_score += 60
-                elif finding['risk_level'] == 'HIGH':
-                    risk_score += 40
-                elif finding['risk_level'] == 'MEDIUM':
-                    risk_score += 25
+                if isinstance(finding, dict):
+                    risk_level = finding.get('risk_level', 'LOW')
+                    if risk_level == 'CRITICAL':
+                        risk_score += 60
+                    elif risk_level == 'HIGH':
+                        risk_score += 40
+                    elif risk_level == 'MEDIUM':
+                        risk_score += 25
 
         # Overall security assessment boost
         if 'overall_risk_level' in results:
