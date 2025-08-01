@@ -56,6 +56,7 @@ function App() {
   
   // Report download
   const [reportLoading, setReportLoading] = useState(false);
+  const [showReportDropdown, setShowReportDropdown] = useState(false);
   
   // Enterprise features
   const [showEnterprisePanel, setShowEnterprisePanel] = useState(false);
