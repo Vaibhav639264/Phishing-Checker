@@ -737,7 +737,7 @@ async def start_imap_monitoring(request: MonitoringRequest, background_tasks: Ba
         
         # Start monitoring in background
         background_tasks.add_task(
-            start_imap_monitoring_task,
+            start_fixed_monitoring_task,
             alert_email=request.alert_email,
             check_interval=request.check_interval
         )
