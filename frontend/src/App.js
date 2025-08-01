@@ -28,6 +28,14 @@ function App() {
   });
   const [showGmailSetup, setShowGmailSetup] = useState(false);
   const [showImapSetup, setShowImapSetup] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalProcessed: 0,
+    threatsFound: 0,
+    lastScan: null,
+    uptime: '0m',
+    alertsSent: 0
+  });
   const [imapConfig, setImapConfig] = useState({
     email: '',
     app_password: ''
