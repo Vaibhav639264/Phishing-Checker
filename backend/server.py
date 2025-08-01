@@ -440,6 +440,7 @@ Please analyze this email and provide a comprehensive threat assessment.
 gmail_service = GmailService()
 imap_service = IMAPService()
 advanced_scanner = AdvancedSecurityScanner()
+multi_account_mgr = get_multi_account_manager(db)
 
 # Initialize detector
 detector = PhishingDetector()
