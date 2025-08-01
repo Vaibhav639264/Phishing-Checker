@@ -279,19 +279,32 @@ class EnhancedPhishingDetector:
             if brand in sender or any(keyword in sender for keyword in keywords):
                 # Check if domain matches the brand
                 legitimate_domains = {
-                    'microsoft': ['microsoft.com', 'outlook.com', 'hotmail.com', 'live.com'],
-                    'google': ['google.com', 'gmail.com'],
-                    'amazon': ['amazon.com', 'amazon.co.uk'],
-                    'apple': ['apple.com', 'icloud.com'],
-                    'paypal': ['paypal.com']
+                    'microsoft': ['microsoft.com', 'outlook.com', 'hotmail.com', 'live.com', 'office.com'],
+                    'google': ['google.com', 'gmail.com', 'accounts.google.com', 'mail.google.com', 'security.google.com'],
+                    'amazon': ['amazon.com', 'amazon.co.uk', 'amazon.in', 'ses.amazonaws.com'],
+                    'apple': ['apple.com', 'icloud.com', 'me.com'],
+                    'paypal': ['paypal.com', 'paypal.co.uk']
                 }
                 
                 if brand in legitimate_domains:
-                    if sender_domain not in legitimate_domains[brand]:
+                    is_legitimate = False
+                    
+                    # Check if it's exactly a legitimate domain
+                    if sender_domain in legitimate_domains[brand]:
+                        is_legitimate = True
+                    else:
+                        # Check if it's a subdomain of a legitimate domain
+                        for legit_domain in legitimate_domains[brand]:
+                            if sender_domain.endswith('.' + legit_domain) or sender_domain == legit_domain:
+                                is_legitimate = True
+                                break
+                    
+                    # Only flag if NOT from legitimate domain
+                    if not is_legitimate:
                         score += 40
-                        sender_analysis['issues'].append(f'Brand impersonation: {brand} from non-legitimate domain')
+                        sender_analysis['issues'].append(f'Brand impersonation: {brand} from non-legitimate domain {sender_domain}')
                         sender_analysis['risk_level'] = 'CRITICAL'
-                        results['detection_reasons'].append(f'{brand.title()} impersonation detected')
+                        results['detection_reasons'].append(f'{brand.title()} impersonation detected from {sender_domain}')
         
         # Check for suspicious sender patterns
         suspicious_sender_patterns = [
