@@ -43,6 +43,9 @@ class RealTimeEmailMonitor:
     async def process_new_email(self, email_data: Dict[str, Any]):
         """Process new email for phishing detection"""
         try:
+            # Ensure detector is initialized
+            await self.initialize_detector()
+            
             logger.info(f"Processing new email from: {email_data.get('from', 'Unknown')}")
             
             # Convert email data to email format for analysis
