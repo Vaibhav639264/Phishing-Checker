@@ -311,14 +311,16 @@ function App() {
     }
   };
 
-  const downloadReport = async () => {
+  const downloadReport = async (format = 'csv') => {
     try {
       setReportLoading(true);
-      const response = await axios.get(`${API}/reports/blocked-emails`);
+      const response = await axios.get(`${API}/reports/blocked-emails/${format}`);
       
       if (response.data.success) {
-        // Create and download CSV file
-        const blob = new Blob([response.data.content], { type: 'text/csv' });
+        // Create and download file
+        const blob = new Blob([response.data.content], { 
+          type: response.data.content_type || 'text/plain' 
+        });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -328,7 +330,7 @@ function App() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        alert(`Report downloaded successfully! ${response.data.total_blocked} blocked emails included.`);
+        alert(`${format.toUpperCase()} report downloaded successfully! ${response.data.total_blocked} blocked emails included.`);
       } else {
         alert('Failed to generate report');
       }
