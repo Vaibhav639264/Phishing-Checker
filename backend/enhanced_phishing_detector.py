@@ -80,7 +80,8 @@ class EnhancedPhishingDetector:
             'microsoft.com', 'outlook.com', 'live.com', 'hotmail.com',
             'apple.com', 'icloud.com', 'me.com',
             'linkedin.com', 'twitter.com', 'facebook.com', 'instagram.com',
-            'github.com', 'stackoverflow.com', 'medium.com'
+            'github.com', 'stackoverflow.com', 'medium.com',
+            'perplexity.ai', 'openai.com', 'anthropic.com', 'emergent.ai'
         ]
         
     async def analyze_email_comprehensive(self, email_content: str, email_data: Dict[str, Any], filename: str) -> Dict[str, Any]:
