@@ -70,14 +70,16 @@ function App() {
       const response = await axios.post(`${API}/imap/setup`, imapConfig);
       
       if (response.data.success) {
-        alert('IMAP setup successful! You can now start monitoring.');
+        alert('✅ IMAP setup successful! You can now start monitoring.');
         await checkGmailStatus();
         setShowImapSetup(false);
       } else {
-        alert('IMAP setup failed: ' + response.data.message);
+        const errorDetails = response.data.connection_test?.details || '';
+        alert(`❌ IMAP setup failed: ${response.data.message}\n\n${errorDetails}`);
       }
     } catch (error) {
-      alert(`IMAP setup failed: ${error.response?.data?.detail || error.message}`);
+      const errorMsg = error.response?.data?.detail || error.message;
+      alert(`❌ IMAP setup failed: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
