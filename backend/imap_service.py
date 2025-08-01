@@ -25,7 +25,7 @@ class IMAPService:
         self.mail = None
         
     async def initialize(self) -> bool:
-        """Initialize IMAP connection"""
+        """Initialize IMAP connection with timeout"""
         try:
             if not self.email_address or not self.app_password:
                 logger.error(f"Gmail credentials missing - Email: {bool(self.email_address)}, Password: {bool(self.app_password)}")
@@ -36,20 +36,28 @@ class IMAPService:
             # Create SSL context
             context = ssl.create_default_context()
             
-            # Connect to IMAP server
+            # Connect to IMAP server with timeout
             self.mail = imaplib.IMAP4_SSL(self.imap_server, self.imap_port, ssl_context=context)
+            self.mail.sock.settimeout(30)  # 30 second timeout
             
-            # Login
-            self.mail.login(self.email_address, self.app_password)
+            # Login with timeout handling
+            try:
+                self.mail.login(self.email_address, self.app_password)
+            except socket.timeout:
+                logger.error("IMAP login timeout - connection took too long")
+                return False
             
-            logger.info(f"IMAP connection established for {self.email_address}")
+            logger.info(f"✅ IMAP connection established for {self.email_address}")
             return True
             
         except imaplib.IMAP4.error as e:
-            logger.error(f"IMAP authentication failed: {str(e)}")
+            logger.error(f"❌ IMAP authentication failed: {str(e)}")
+            return False
+        except socket.timeout:
+            logger.error("❌ IMAP connection timeout")
             return False
         except Exception as e:
-            logger.error(f"Failed to initialize IMAP connection: {str(e)}")
+            logger.error(f"❌ Failed to initialize IMAP connection: {str(e)}")
             return False
 
     async def get_recent_emails(self, max_results: int = 10) -> List[Dict[str, Any]]:
