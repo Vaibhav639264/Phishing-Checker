@@ -312,6 +312,13 @@ function App() {
                   >
                     {manualScanLoading ? 'Scanning...' : 'Manual Scan'}
                   </button>
+                  <button
+                    onClick={testDetection}
+                    disabled={loading}
+                    className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
+                  >
+                    Test Detection
+                  </button>
                 </>
               )}
             </div>
