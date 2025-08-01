@@ -1239,6 +1239,30 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
           </div>
         )}
 
+        {/* Manual Scan Progress */}
+        {manualScanLoading && (
+          <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Manual Scan Progress</h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm text-gray-700 mb-2">
+                  <span>{scanStatus}</span>
+                  <span>{Math.round(scanProgress)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                    style={{width: `${scanProgress}%`}}
+                  ></div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-600">
+                Scanning up to {totalEmailsToScan} emails for threats...
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Manual Scan Results */}
         {scanResults && (
           <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
