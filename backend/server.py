@@ -550,6 +550,41 @@ Date: {email_data.get('date', '')}
     except Exception as e:
         logger.error(f"❌ Error processing monitored email: {str(e)}")
 
+@api_router.get("/reports/blocked-emails")
+async def download_blocked_emails_report():
+    """Generate and download report of all blocked emails"""
+    try:
+        # Get all analyses with High/Critical threat levels
+        blocked_analyses = await db.email_analyses.find({
+            "threat_level": {"$in": ["HIGH", "CRITICAL"]}
+        }).sort("timestamp", -1).to_list(1000)
+        
+        # Generate CSV content
+        csv_content = "Timestamp,Sender,Receiver,Subject,Threat Level,Confidence Score,Detection Reasons\n"
+        
+        for analysis in blocked_analyses:
+            email_info = analysis.get('email_info', {})
+            timestamp = analysis.get('timestamp', '')
+            sender = email_info.get('from', 'N/A').replace(',', ';')
+            receiver = email_info.get('to', 'N/A').replace(',', ';')
+            subject = email_info.get('subject', 'N/A').replace(',', ';')
+            threat_level = analysis.get('threat_level', 'UNKNOWN')
+            confidence = analysis.get('confidence_score', 0)
+            reasons = '; '.join(analysis.get('detection_reasons', [])).replace(',', ';')
+            
+            csv_content += f'"{timestamp}","{sender}","{receiver}","{subject}","{threat_level}","{confidence}","{reasons}"\n'
+        
+        return {
+            'success': True,
+            'filename': f'blocked_emails_report_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.csv',
+            'content': csv_content,
+            'total_blocked': len(blocked_analyses)
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to generate report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
+
 @api_router.get("/analyses/{analysis_id}")
 async def get_analysis_details(analysis_id: str):
     """Get detailed analysis of a specific email"""
