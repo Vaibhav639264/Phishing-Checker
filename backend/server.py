@@ -693,6 +693,93 @@ async def get_recent_emails_imap(max_results: int = 10):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get emails: {str(e)}")
 
+@api_router.post("/imap/start-monitoring")
+async def start_imap_monitoring(request: MonitoringRequest, background_tasks: BackgroundTasks):
+    """Start real-time IMAP email monitoring"""
+    try:
+        if email_monitor.monitoring:
+            return {
+                'success': False,
+                'message': 'Monitoring is already active'
+            }
+        
+        # Initialize email monitor with IMAP service
+        email_monitor.gmail_service = imap_service  # Use IMAP service instead of Gmail API
+        
+        # Start monitoring in background
+        background_tasks.add_task(
+            start_imap_monitoring_task,
+            alert_email=request.alert_email,
+            check_interval=request.check_interval
+        )
+        
+        return {
+            'success': True,
+            'message': f'Real-time IMAP monitoring started (checking every {request.check_interval} seconds)',
+            'alert_email': request.alert_email
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start monitoring: {str(e)}")
+
+@api_router.get("/debug/analyze-sample")
+async def debug_analyze_sample():
+    """Debug endpoint to test phishing detection with sample email"""
+    sample_phishing_email = """From: security@paypaI-security.com
+To: user@company.com
+Subject: URGENT: Your PayPal Account Will Be Suspended
+Date: Mon, 15 Jan 2024 10:30:00 +0000
+
+Dear User,
+
+We have detected unusual activity on your PayPal account. Your account will be suspended within 24 hours unless you verify your identity immediately.
+
+Click here to verify: https://paypal-verify.suspicious-domain.tk/redirect?url=aHR0cHM6Ly9ldmlsLXNpdGUuY29tL3BoaXNoaW5n
+
+If you do not take immediate action, your account will be permanently suspended.
+
+Best regards,
+PayPal Security Team
+"""
+    
+    try:
+        analysis_result = await detector.analyze_email(sample_phishing_email, "debug_sample.eml")
+        
+        return {
+            'success': True,
+            'sample_email': 'PayPal phishing sample',
+            'analysis': analysis_result,
+            'detection_summary': {
+                'threat_level': analysis_result.get('threat_level', 'UNKNOWN'),
+                'url_threats': len(analysis_result.get('url_analysis', [])),
+                'sender_issues': len(analysis_result.get('sender_analysis', [])),
+                'social_engineering': len(analysis_result.get('social_engineering', [])),
+                'advanced_url_threats': len(analysis_result.get('advanced_url_analysis', [])),
+                'overall_risk': analysis_result.get('overall_risk_level', 'UNKNOWN')
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Debug analysis failed: {str(e)}")
+
+async def start_imap_monitoring_task(alert_email: str, check_interval: int = 60):
+    """Background task for IMAP monitoring"""
+    try:
+        email_monitor.alert_email = alert_email
+        email_monitor.monitoring = True
+        
+        logger.info(f"Starting IMAP monitoring task with alert email: {alert_email}")
+        
+        # Use IMAP service for monitoring
+        await imap_service.monitor_new_emails(
+            callback_func=email_monitor.process_new_email,
+            check_interval=check_interval
+        )
+        
+    except Exception as e:
+        logger.error(f"IMAP monitoring task failed: {str(e)}")
+        email_monitor.monitoring = False
+
 # Legacy routes
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
