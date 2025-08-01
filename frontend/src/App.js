@@ -311,6 +311,35 @@ function App() {
     }
   };
 
+  const downloadReport = async () => {
+    try {
+      setReportLoading(true);
+      const response = await axios.get(`${API}/reports/blocked-emails`);
+      
+      if (response.data.success) {
+        // Create and download CSV file
+        const blob = new Blob([response.data.content], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', response.data.filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        alert(`Report downloaded successfully! ${response.data.total_blocked} blocked emails included.`);
+      } else {
+        alert('Failed to generate report');
+      }
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert(`Failed to download report: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const fetchAnalysisDetails = async (analysisId) => {
     try {
       setAnalysisDetailsLoading(true);
