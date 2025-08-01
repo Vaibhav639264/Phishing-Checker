@@ -79,6 +79,41 @@ def extract_email_data(email_message):
 async def root():
     return {"message": "Enhanced Email Phishing Detection API"}
 
+@api_router.post("/analyze-email")
+async def analyze_uploaded_email(file: UploadFile = File(...)):
+    """Analyze uploaded email file"""
+    try:
+        logger.info(f"📧 Analyzing uploaded email: {file.filename}")
+        
+        # Read file content
+        content = await file.read()
+        email_content = content.decode('utf-8', errors='ignore')
+        
+        # Parse email
+        email_msg = email.message_from_string(email_content)
+        email_data = extract_email_data(email_msg)
+        
+        logger.info(f"📋 Email parsed - Subject: {email_data.get('subject', 'N/A')}")
+        
+        # Analyze with enhanced detector
+        analysis_result = await phishing_detector.analyze_email_comprehensive(
+            email_content, email_data, file.filename
+        )
+        
+        # Store in database
+        analysis_result['id'] = str(uuid.uuid4())
+        analysis_result['timestamp'] = datetime.utcnow().isoformat()
+        
+        await db.email_analyses.insert_one(analysis_result)
+        
+        logger.info(f"✅ Analysis complete: {analysis_result['threat_level']} threat level")
+        
+        return EmailAnalysisResult(**analysis_result)
+        
+    except Exception as e:
+        logger.error(f"❌ Email analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
 @api_router.post("/imap/test-connection")
 async def test_imap_connection(request: IMAPSetupRequest):
     """Test IMAP connection without saving"""
