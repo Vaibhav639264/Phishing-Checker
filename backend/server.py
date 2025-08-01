@@ -602,6 +602,98 @@ Keep Active Password
         logger.error(f"❌ Debug analysis failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Debug analysis failed: {str(e)}")
 
+@api_router.get("/enterprise/accounts")
+async def get_enterprise_accounts():
+    """Get enterprise accounts (placeholder for now)"""
+    try:
+        # For now, return empty accounts - this will be expanded later
+        return {
+            'success': True,
+            'accounts': []
+        }
+    except Exception as e:
+        logger.error(f"❌ Error getting enterprise accounts: {str(e)}")
+        return {'success': False, 'accounts': []}
+
+@api_router.get("/enterprise/stats")
+async def get_enterprise_stats():
+    """Get enterprise statistics (placeholder for now)"""
+    try:
+        # For now, return basic stats - this will be expanded later
+        return {
+            'success': True,
+            'enterprise_stats': {
+                'total_accounts': 0,
+                'active_monitoring': 0,
+                'total_threats_blocked': 0,
+                'accounts_with_threats': 0
+            }
+        }
+    except Exception as e:
+        logger.error(f"❌ Error getting enterprise stats: {str(e)}")
+        return {
+            'success': False,
+            'enterprise_stats': {
+                'total_accounts': 0,
+                'active_monitoring': 0,
+                'total_threats_blocked': 0,
+                'accounts_with_threats': 0
+            }
+        }
+
+@api_router.get("/enterprise/blocked-emails")
+async def get_blocked_emails():
+    """Get blocked emails (placeholder for now)"""
+    try:
+        # For now, return empty blocked emails - this will be expanded later
+        return {
+            'success': True,
+            'blocked_emails': []
+        }
+    except Exception as e:
+        logger.error(f"❌ Error getting blocked emails: {str(e)}")
+        return {'success': False, 'blocked_emails': []}
+
+@api_router.post("/enterprise/accounts/add")
+async def add_enterprise_account(account_data: dict):
+    """Add enterprise account (placeholder for now)"""
+    try:
+        # For now, just return success - this will be expanded later
+        return {
+            'success': True,
+            'message': 'Enterprise account management coming soon',
+            'account': account_data
+        }
+    except Exception as e:
+        logger.error(f"❌ Error adding enterprise account: {str(e)}")
+        return {'success': False, 'message': 'Failed to add account'}
+
+@api_router.post("/enterprise/accounts/{email}/start-monitoring")
+async def start_enterprise_monitoring(email: str):
+    """Start monitoring for enterprise account (placeholder for now)"""
+    try:
+        return {
+            'success': True,
+            'message': 'Enterprise monitoring coming soon',
+            'email': email
+        }
+    except Exception as e:
+        logger.error(f"❌ Error starting enterprise monitoring: {str(e)}")
+        return {'success': False, 'message': 'Failed to start monitoring'}
+
+@api_router.post("/enterprise/accounts/{email}/stop-monitoring")
+async def stop_enterprise_monitoring(email: str):
+    """Stop monitoring for enterprise account (placeholder for now)"""
+    try:
+        return {
+            'success': True,
+            'message': 'Enterprise monitoring stopped',
+            'email': email
+        }
+    except Exception as e:
+        logger.error(f"❌ Error stopping enterprise monitoring: {str(e)}")
+        return {'success': False, 'message': 'Failed to stop monitoring'}
+
 # Include the router in the main app
 app.include_router(api_router)
 
