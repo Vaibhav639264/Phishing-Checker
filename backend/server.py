@@ -661,6 +661,23 @@ async def get_recent_emails(max_results: int = 10):
         raise HTTPException(status_code=500, detail=f"Failed to get emails: {str(e)}")
 
 # IMAP Integration Endpoints (Alternative to Gmail API)
+@api_router.post("/imap/test-connection")
+async def test_imap_connection_only(request: IMAPSetupRequest):
+    """Test IMAP connection without saving credentials"""
+    try:
+        # Create temporary IMAP service for testing
+        test_imap = IMAPService(request.email, request.app_password)
+        test_result = await test_imap.test_connection()
+        
+        return test_result
+        
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Connection test failed: {str(e)}',
+            'details': 'Please check your credentials and try again.'
+        }
+
 @api_router.post("/imap/setup")
 async def setup_imap(request: IMAPSetupRequest):
     """Setup IMAP connection with Gmail App Password"""
