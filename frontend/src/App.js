@@ -221,6 +221,36 @@ function App() {
     }
   };
 
+  const testDetection = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/debug/analyze-sample`);
+      
+      if (response.data.success) {
+        const analysis = response.data.analysis;
+        const summary = response.data.detection_summary;
+        
+        alert(`🧪 Detection Test Results:
+        
+📧 Sample: ${response.data.sample_email}
+🎯 Threat Level: ${summary.threat_level}
+🔗 URL Threats: ${summary.url_threats}
+👤 Sender Issues: ${summary.sender_issues}  
+🧠 Social Engineering: ${summary.social_engineering}
+🛡️ Advanced Threats: ${summary.advanced_url_threats}
+📊 Overall Risk: ${summary.overall_risk}
+
+${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ? 
+  '✅ Detection Working! This would trigger alerts.' : 
+  '⚠️ Detection may need tuning.'}`);
+      }
+    } catch (error) {
+      alert(`Test failed: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
