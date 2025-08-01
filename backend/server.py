@@ -373,11 +373,10 @@ Please analyze this email and provide a comprehensive threat assessment.
         else:
             return 'LOW'
 
-# Initialize Gmail service
+# Initialize services
 gmail_service = GmailService()
-
-# Initialize IMAP service
 imap_service = IMAPService()
+advanced_scanner = AdvancedSecurityScanner()
 
 # Initialize detector
 detector = PhishingDetector()
