@@ -1446,6 +1446,159 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
           </div>
         </div>
       </div>
+
+      {/* Analysis Details Modal */}
+      {showAnalysisDetails && selectedAnalysis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Email Analysis Details</h2>
+                <button 
+                  onClick={() => {setShowAnalysisDetails(false); setSelectedAnalysis(null);}}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {analysisDetailsLoading ? (
+                <div className="text-center py-8">
+                  <div className="spinner mx-auto mb-4"></div>
+                  <p>Loading analysis details...</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Email Info */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 mb-3">Email Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Subject:</span>
+                        <p className="text-gray-900 mt-1">{selectedAnalysis.email_info?.subject || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">From:</span>
+                        <p className="text-gray-900 mt-1">{selectedAnalysis.email_info?.from || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Date:</span>
+                        <p className="text-gray-900 mt-1">{selectedAnalysis.email_info?.date || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Threat Level:</span>
+                        <span className={`px-2 py-1 rounded text-xs ${getThreatColor(selectedAnalysis.threat_level)}`}>
+                          {selectedAnalysis.threat_level}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detection Reasons */}
+                  {selectedAnalysis.detection_reasons && selectedAnalysis.detection_reasons.length > 0 && (
+                    <div className="bg-red-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-red-900 mb-3">🚨 Why This Email Was Blocked</h3>
+                      <ul className="space-y-2">
+                        {selectedAnalysis.detection_reasons.map((reason, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-red-600 mr-2">•</span>
+                            <span className="text-red-800">{reason}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Threat Indicators */}
+                  {selectedAnalysis.threat_indicators && selectedAnalysis.threat_indicators.length > 0 && (
+                    <div className="bg-orange-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-orange-900 mb-3">⚠️ Threat Indicators</h3>
+                      <div className="space-y-2">
+                        {selectedAnalysis.threat_indicators.map((indicator, index) => (
+                          <div key={index} className="flex items-center justify-between bg-white rounded p-2">
+                            <span className="text-orange-800">{indicator.pattern}</span>
+                            <span className="text-xs text-orange-600">Score: {indicator.score}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* URL Analysis */}
+                  {selectedAnalysis.url_analysis && selectedAnalysis.url_analysis.length > 0 && (
+                    <div className="bg-yellow-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-yellow-900 mb-3">🔗 URL Analysis</h3>
+                      <div className="space-y-2">
+                        {selectedAnalysis.url_analysis.map((url, index) => (
+                          <div key={index} className="bg-white rounded p-2">
+                            <p className="font-medium text-yellow-800">URL: {url.original_url}</p>
+                            {url.issues && url.issues.length > 0 && (
+                              <ul className="mt-1 text-sm text-yellow-700">
+                                {url.issues.map((issue, i) => (
+                                  <li key={i}>• {issue}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Brand Impersonation */}
+                  {selectedAnalysis.brand_impersonation && selectedAnalysis.brand_impersonation.length > 0 && (
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-purple-900 mb-3">🎭 Brand Impersonation</h3>
+                      <div className="space-y-2">
+                        {selectedAnalysis.brand_impersonation.map((brand, index) => (
+                          <div key={index} className="bg-white rounded p-2">
+                            <p className="font-medium text-purple-800">Brand: {brand.brand}</p>
+                            <p className="text-sm text-purple-700">Mentions: {brand.mentions}</p>
+                            <p className="text-sm text-purple-700">Sender Domain: {brand.sender_domain}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Analysis */}
+                  {selectedAnalysis.llm_analysis && (
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-blue-900 mb-3">🤖 AI Analysis</h3>
+                      <div className="bg-white rounded p-3 text-sm text-gray-700 max-h-60 overflow-y-auto">
+                        <pre className="whitespace-pre-wrap">{selectedAnalysis.llm_analysis}</pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Confidence Score */}
+                  <div className="bg-gray-100 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 mb-3">📊 Analysis Summary</h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Confidence Score:</span>
+                      <div className="flex items-center">
+                        <div className="w-32 bg-gray-300 rounded-full h-2 mr-3">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              selectedAnalysis.confidence_score >= 80 ? 'bg-red-500' :
+                              selectedAnalysis.confidence_score >= 60 ? 'bg-orange-500' :
+                              selectedAnalysis.confidence_score >= 30 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{width: `${selectedAnalysis.confidence_score}%`}}
+                          ></div>
+                        </div>
+                        <span className="font-bold">{selectedAnalysis.confidence_score}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
