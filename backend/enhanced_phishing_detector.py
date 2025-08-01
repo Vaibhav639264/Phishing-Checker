@@ -24,23 +24,22 @@ class EnhancedPhishingDetector:
             r'onedrive.*access.*suspend',
             r'teams.*account.*block',
             
-            # Generic credential harvesting
-            r'verify.*account.*immediate',
-            r'account.*suspend.*24.*hour',
-            r'password.*expire.*today',
-            r'unusual.*activity.*detected',
-            r'security.*alert.*action.*required',
-            r'click.*here.*verify.*account',
+            # Generic credential harvesting (made more specific)
+            r'verify.*account.*immediate.*or.*suspend',
+            r'verify.*account.*within.*24.*hours?',
+            r'account.*suspend.*24.*hour.*unless',
+            r'password.*expire.*today.*click',
+            r'click.*here.*verify.*account.*now',
             r'keep.*active.*password',
-            r'update.*payment.*info',
-            r'confirm.*identity.*now',
+            r'update.*payment.*info.*immediately',
+            r'confirm.*identity.*now.*or.*lose',
             
-            # Urgency indicators
-            r'immediate.*action.*required',
-            r'expires?.*today',
-            r'within.*24.*hours?',
-            r'urgent.*response.*needed',
-            r'act.*now.*or.*lose.*access'
+            # Urgency indicators (made more specific)
+            r'immediate.*action.*required.*or.*account',
+            r'expires?.*today.*click.*here',
+            r'within.*24.*hours?.*or.*lose.*access',
+            r'urgent.*response.*needed.*verify',
+            r'act.*now.*or.*lose.*access.*permanently'
         ]
         
         # Suspicious domains and patterns
