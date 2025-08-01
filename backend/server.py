@@ -108,7 +108,14 @@ async def analyze_uploaded_email(file: UploadFile = File(...)):
         
         logger.info(f"✅ Analysis complete: {analysis_result['threat_level']} threat level")
         
-        return EmailAnalysisResult(**analysis_result)
+        # Return in the correct format for EmailAnalysisResult
+        return EmailAnalysisResult(
+            id=analysis_result['id'],
+            filename=file.filename,
+            analysis_result=analysis_result,
+            threat_level=analysis_result['threat_level'],
+            timestamp=datetime.utcnow()
+        )
         
     except Exception as e:
         logger.error(f"❌ Email analysis failed: {str(e)}")
