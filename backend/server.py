@@ -203,10 +203,10 @@ async def manual_scan(request: ManualScanRequest):
     """Manual scan of Gmail inbox"""
     global robust_imap
     
+    if not robust_imap:
+        raise HTTPException(status_code=400, detail="IMAP not configured. Please setup IMAP connection first.")
+    
     try:
-        if not robust_imap:
-            raise HTTPException(status_code=400, detail="IMAP not configured. Please setup IMAP connection first.")
-        
         logger.info(f"🔍 Starting manual scan for up to {request.max_emails} emails")
         
         # Get emails from Gmail
