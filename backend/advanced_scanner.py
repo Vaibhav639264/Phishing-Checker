@@ -436,16 +436,22 @@ class AdvancedSecurityScanner:
         max_score = 0
         
         # Factor in URL risks
-        for finding in url_analysis.get('advanced_url_analysis', []):
-            score = risk_scores.get(finding['risk_level'], 0)
-            total_score += score
-            max_score = max(max_score, score)
+        url_findings = url_analysis.get('advanced_url_analysis', [])
+        if isinstance(url_findings, list):
+            for finding in url_findings:
+                if isinstance(finding, dict):
+                    score = risk_scores.get(finding.get('risk_level', 'LOW'), 0)
+                    total_score += score
+                    max_score = max(max_score, score)
         
-        # Factor in attachment risks
-        for finding in attachment_analysis.get('advanced_attachment_analysis', []):
-            score = risk_scores.get(finding['risk_level'], 0)
-            total_score += score
-            max_score = max(max_score, score)
+        # Factor in attachment risks  
+        attachment_findings = attachment_analysis.get('advanced_attachment_analysis', [])
+        if isinstance(attachment_findings, list):
+            for finding in attachment_findings:
+                if isinstance(finding, dict):
+                    score = risk_scores.get(finding.get('risk_level', 'LOW'), 0)
+                    total_score += score
+                    max_score = max(max_score, score)
         
         # Determine overall risk level
         if max_score >= 10:
