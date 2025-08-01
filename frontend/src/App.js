@@ -257,12 +257,35 @@ function App() {
                 </h3>
                 <p className="text-sm text-gray-600">
                   {gmailStatus.monitoring_active ? '🟢 Real-time monitoring active' : '⏸️ Monitoring inactive'}
+                  {gmailStatus.configured && (
+                    <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                      {connectionMethod === 'imap' ? 'IMAP' : 'OAuth'}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
             <div className="flex space-x-2">
+              {!gmailStatus.configured && (
+                <select 
+                  value={connectionMethod} 
+                  onChange={(e) => setConnectionMethod(e.target.value)}
+                  className="px-2 py-1 text-sm border rounded-lg"
+                >
+                  <option value="imap">IMAP (Recommended)</option>
+                  <option value="gmail">Gmail OAuth</option>
+                </select>
+              )}
               <button
-                onClick={() => setShowGmailSetup(!showGmailSetup)}
+                onClick={() => {
+                  if (connectionMethod === 'imap') {
+                    setShowImapSetup(!showImapSetup);
+                    setShowGmailSetup(false);
+                  } else {
+                    setShowGmailSetup(!showGmailSetup);
+                    setShowImapSetup(false);
+                  }
+                }}
                 className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
               >
                 Setup
