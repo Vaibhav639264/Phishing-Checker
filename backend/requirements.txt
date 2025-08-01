@@ -28,3 +28,9 @@ email
 python-magic-bin
 base64
 urllib3
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+smtplib
+email-mime-text
