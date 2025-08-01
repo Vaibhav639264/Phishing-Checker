@@ -150,6 +150,31 @@ function App() {
     }
   };
 
+  const testImapConnection = async () => {
+    try {
+      setLoading(true);
+      
+      // Just test the connection without saving
+      const testService = {
+        email_address: imapConfig.email,
+        app_password: imapConfig.app_password
+      };
+      
+      const response = await axios.post(`${API}/imap/test-connection`, testService);
+      
+      if (response.data.status === 'success') {
+        alert(`✅ Connection Test Successful!\n\n${response.data.message}\n\nFound ${response.data.total_messages} messages in inbox.`);
+      } else {
+        alert(`❌ Connection Test Failed!\n\n${response.data.message}\n\n${response.data.details || ''}`);
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || error.message;
+      alert(`❌ Connection test failed: ${errorMsg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     setSelectedFile(file);
