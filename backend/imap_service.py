@@ -286,6 +286,9 @@ This email has been automatically processed by your Email Phishing Detector.
                 status, messages = self.mail.search(None, 'ALL')
                 message_count = len(messages[0].split()) if messages[0] else 0
                 
+                # Close connection after test
+                self.close_connection()
+                
                 return {
                     'status': 'success',
                     'message': 'IMAP connection successful',
@@ -295,13 +298,28 @@ This email has been automatically processed by your Email Phishing Detector.
             else:
                 return {
                     'status': 'error',
-                    'message': 'Failed to connect to IMAP server'
+                    'message': 'Authentication failed. Please check your email and app password.',
+                    'details': 'Make sure you have enabled 2-Factor Authentication and generated an App Password from Google Account settings.'
                 }
                 
+        except imaplib.IMAP4.error as e:
+            error_msg = str(e)
+            if 'AUTHENTICATIONFAILED' in error_msg:
+                return {
+                    'status': 'error',
+                    'message': 'Invalid Gmail credentials',
+                    'details': 'Please verify your email address and app password. Make sure 2FA is enabled and you are using an App Password, not your regular Gmail password.'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'message': f'IMAP error: {error_msg}'
+                }
         except Exception as e:
             return {
                 'status': 'error',
-                'message': f'IMAP connection failed: {str(e)}'
+                'message': f'Connection failed: {str(e)}',
+                'details': 'Please check your internet connection and Gmail settings.'
             }
 
     def close_connection(self):
