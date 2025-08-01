@@ -70,6 +70,19 @@ class EnhancedPhishingDetector:
             'banking': ['account', 'statement', 'transaction', 'funds']
         }
         
+        # Whitelist of legitimate financial/service domains to never flag
+        self.legitimate_service_domains = [
+            'stripe.com', 'paypal.com', 'razorpay.com', 'payu.in', 'phonepe.com',
+            'hdfcbank.net', 'hdfcbank.com', 'icicibank.com', 'sbi.co.in',
+            'axisbank.com', 'kotak.com', 'citibank.co.in', 'standardchartered.co.in',
+            'amazon.com', 'amazon.in', 'amazon.co.uk', 'ses.amazonaws.com',
+            'google.com', 'gmail.com', 'accounts.google.com', 'security.google.com',
+            'microsoft.com', 'outlook.com', 'live.com', 'hotmail.com',
+            'apple.com', 'icloud.com', 'me.com',
+            'linkedin.com', 'twitter.com', 'facebook.com', 'instagram.com',
+            'github.com', 'stackoverflow.com', 'medium.com'
+        ]
+        
     async def analyze_email_comprehensive(self, email_content: str, email_data: Dict[str, Any], filename: str) -> Dict[str, Any]:
         """Comprehensive email analysis with enhanced detection"""
         try:
