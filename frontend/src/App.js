@@ -44,6 +44,11 @@ function App() {
   const [manualScanLoading, setManualScanLoading] = useState(false);
   const [scanResults, setScanResults] = useState(null);
   
+  // Email analysis details
+  const [showAnalysisDetails, setShowAnalysisDetails] = useState(false);
+  const [selectedAnalysis, setSelectedAnalysis] = useState(null);
+  const [analysisDetailsLoading, setAnalysisDetailsLoading] = useState(false);
+  
   // Enterprise features
   const [showEnterprisePanel, setShowEnterprisePanel] = useState(false);
   const [showBlockedEmails, setShowBlockedEmails] = useState(false);
