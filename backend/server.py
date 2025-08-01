@@ -390,8 +390,19 @@ Please analyze this email and provide a comprehensive threat assessment.
             llm_results = await self.analyze_with_llm(email_content, results)
             results.update(llm_results)
             
-            # Calculate threat level (considering advanced analysis)
+            # Calculate threat level (considering advanced analysis and thread analysis)
             threat_level = self.calculate_threat_level_advanced(results)
+            
+            # Check if thread analysis escalated the threat
+            if 'thread_analysis' in results:
+                thread_threat_level = results['thread_analysis'].get('thread_threat_level', 'LOW')
+                threat_scores = {'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'CRITICAL': 4}
+                
+                if (threat_scores.get(thread_threat_level, 0) > 
+                    threat_scores.get(threat_level, 0)):
+                    threat_level = thread_threat_level
+                    results['final_threat_escalated_by_thread'] = True
+            
             results['threat_level'] = threat_level
             
             return results
