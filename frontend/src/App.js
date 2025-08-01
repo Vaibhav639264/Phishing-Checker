@@ -375,6 +375,12 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
                   >
                     Test Detection
                   </button>
+                  <button
+                    onClick={() => setShowDashboard(!showDashboard)}
+                    className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
+                  >
+                    Dashboard
+                  </button>
                 </>
               )}
             </div>
