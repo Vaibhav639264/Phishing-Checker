@@ -250,7 +250,7 @@ class EnhancedPhishingDetector:
         return min(score, 100)
     
     def _analyze_urls_comprehensive(self, email_data: Dict[str, Any], results: Dict[str, Any]) -> int:
-        """Comprehensive URL analysis"""
+        """Comprehensive URL analysis with redirection checking"""
         score = 0
         content = email_data.get('body', '') + ' ' + email_data.get('html_body', '')
         
@@ -265,6 +265,39 @@ class EnhancedPhishingDetector:
         for pattern in url_patterns:
             urls = re.findall(pattern, content, re.IGNORECASE)
             all_urls.extend(urls)
+        
+        def check_url_redirections(url, max_redirects=5):
+            """Follow URL redirections and analyze each step"""
+            redirects = []
+            current_url = url
+            
+            try:
+                import requests
+                for i in range(max_redirects):
+                    try:
+                        response = requests.head(current_url, allow_redirects=False, timeout=5)
+                        
+                        if response.status_code in [301, 302, 303, 307, 308]:
+                            redirect_url = response.headers.get('Location', '')
+                            if redirect_url:
+                                redirects.append({
+                                    'from': current_url,
+                                    'to': redirect_url,
+                                    'status_code': response.status_code,
+                                    'step': i + 1
+                                })
+                                current_url = redirect_url
+                            else:
+                                break
+                        else:
+                            break
+                    except:
+                        break
+                        
+            except Exception as e:
+                logger.warning(f"URL redirection check failed for {url}: {str(e)}")
+            
+            return redirects, current_url
         
         for url in set(all_urls):  # Remove duplicates
             url_score = 0
