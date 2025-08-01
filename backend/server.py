@@ -157,7 +157,7 @@ async def setup_imap(request: IMAPSetupRequest):
 
 @api_router.get("/imap/status")
 async def get_imap_status():
-    """Get IMAP connection status"""
+    """Get IMAP connection status with quick check"""
     try:
         email = os.environ.get('GMAIL_EMAIL')
         password = os.environ.get('GMAIL_APP_PASSWORD')
@@ -170,9 +170,9 @@ async def get_imap_status():
                 'message': 'IMAP credentials not configured'
             }
         
-        # Test current connection
+        # Quick connection test for faster response
         if robust_imap:
-            test_result = await robust_imap.test_connection()
+            test_result = await robust_imap.test_connection(quick_check=True)
             
             return {
                 'configured': test_result['status'] == 'success',
