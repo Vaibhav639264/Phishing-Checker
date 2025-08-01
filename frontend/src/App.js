@@ -580,19 +580,34 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
               />
             </div>
             
-            <button
-              onClick={setupImap}
-              disabled={
-                loading || 
-                !imapConfig.email || 
-                !imapConfig.app_password || 
-                imapConfig.app_password.length !== 16 ||
-                !imapConfig.email.includes('@gmail.com')
-              }
-              className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Testing IMAP Connection...' : 'Setup IMAP Connection'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={setupImap}
+                disabled={
+                  loading || 
+                  !imapConfig.email || 
+                  !imapConfig.app_password || 
+                  imapConfig.app_password.length !== 16 ||
+                  !imapConfig.email.includes('@gmail.com')
+                }
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Testing IMAP Connection...' : 'Setup IMAP Connection'}
+              </button>
+              
+              <button
+                onClick={testImapConnection}
+                disabled={
+                  loading || 
+                  !imapConfig.email || 
+                  !imapConfig.app_password ||
+                  imapConfig.app_password.length !== 16
+                }
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Testing...' : 'Quick Test'}
+              </button>
+            </div>
             
             {(!imapConfig.email.includes('@gmail.com') && imapConfig.email) && (
               <p className="text-red-500 text-sm mt-2">⚠️ Please use a Gmail address</p>
