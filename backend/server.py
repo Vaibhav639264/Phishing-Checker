@@ -286,7 +286,7 @@ Please analyze this email and provide a comprehensive threat assessment.
             }
 
     async def analyze_email(self, email_content: str, filename: str) -> Dict[str, Any]:
-        """Complete email analysis"""
+        """Complete email analysis with advanced scanning"""
         try:
             # Parse email
             email_msg = email.message_from_string(email_content)
@@ -302,7 +302,7 @@ Please analyze this email and provide a comprehensive threat assessment.
             else:
                 body = email_msg.get_payload(decode=True).decode('utf-8', errors='ignore')
 
-            # Run all detection checks
+            # Basic analysis results
             results = {
                 'filename': filename,
                 'subject': email_msg.get('Subject', ''),
@@ -311,18 +311,38 @@ Please analyze this email and provide a comprehensive threat assessment.
                 'date': email_msg.get('Date', ''),
             }
             
-            # Combine all detection results
+            # Run basic detection checks
             results.update(self.check_url_redirections(email_content))
             results.update(self.check_sender_authenticity(email_msg))
             results.update(self.check_social_engineering(body))
             results.update(self.check_attachments(email_msg))
             
-            # LLM Analysis
+            # ADVANCED SECURITY SCANNING
+            # Extract URLs for advanced analysis
+            url_pattern = r'https?://[^\s<>"\'()]+|www\.[^\s<>"\'()]+'
+            urls = re.findall(url_pattern, email_content, re.IGNORECASE)
+            
+            if urls:
+                advanced_url_analysis = await advanced_scanner.analyze_urls_advanced(urls)
+                results.update(advanced_url_analysis)
+            
+            # Advanced attachment analysis
+            advanced_attachment_analysis = await advanced_scanner.analyze_attachments_advanced(email_msg)
+            results.update(advanced_attachment_analysis)
+            
+            # Calculate overall security risk
+            security_assessment = advanced_scanner.calculate_overall_risk_score(
+                results.get('advanced_url_analysis', {}),
+                results.get('advanced_attachment_analysis', {})
+            )
+            results.update(security_assessment)
+            
+            # LLM Analysis (enhanced with advanced findings)
             llm_results = await self.analyze_with_llm(email_content, results)
             results.update(llm_results)
             
-            # Calculate threat level
-            threat_level = self.calculate_threat_level(results)
+            # Calculate threat level (considering advanced analysis)
+            threat_level = self.calculate_threat_level_advanced(results)
             results['threat_level'] = threat_level
             
             return results
