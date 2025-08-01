@@ -13,9 +13,10 @@ import ssl
 logger = logging.getLogger(__name__)
 
 class IMAPService:
-    def __init__(self):
-        self.email_address = os.environ.get('GMAIL_EMAIL')
-        self.app_password = os.environ.get('GMAIL_APP_PASSWORD')  # Gmail App Password
+    def __init__(self, email_address=None, app_password=None):
+        # Allow credentials to be passed directly or from environment
+        self.email_address = email_address or os.environ.get('GMAIL_EMAIL')
+        self.app_password = app_password or os.environ.get('GMAIL_APP_PASSWORD')
         self.imap_server = 'imap.gmail.com'
         self.smtp_server = 'smtp.gmail.com'
         self.imap_port = 993
