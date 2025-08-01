@@ -664,6 +664,249 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
           </div>
         )}
 
+        {/* Enterprise Management Panel */}
+        {showEnterprisePanel && (
+          <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">🏢 Enterprise Account Management</h3>
+              <button
+                onClick={() => setShowEnterprisePanel(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Enterprise Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="text-blue-600 text-2xl mb-2">👥</div>
+                <p className="text-sm text-blue-600 font-medium">Total Accounts</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {enterpriseStats.accounts?.total || enterpriseAccounts.length}
+                </p>
+              </div>
+              
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="text-green-600 text-2xl mb-2">📡</div>
+                <p className="text-sm text-green-600 font-medium">Active Monitoring</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {enterpriseStats.accounts?.monitoring_active || enterpriseAccounts.filter(a => a.monitoring_active).length}
+                </p>
+              </div>
+              
+              <div className="bg-orange-50 rounded-lg p-4">
+                <div className="text-orange-600 text-2xl mb-2">📧</div>
+                <p className="text-sm text-orange-600 font-medium">Emails Processed</p>
+                <p className="text-2xl font-bold text-orange-900">
+                  {enterpriseStats.emails?.total_processed || 0}
+                </p>
+              </div>
+              
+              <div className="bg-red-50 rounded-lg p-4">
+                <div className="text-red-600 text-2xl mb-2">🚨</div>
+                <p className="text-sm text-red-600 font-medium">Threats Blocked</p>
+                <p className="text-2xl font-bold text-red-900">
+                  {enterpriseStats.emails?.total_threats || 0}
+                </p>
+              </div>
+            </div>
+
+            {/* Add New Account Form */}
+            <div className="border border-gray-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-gray-900 mb-4">➕ Add New Employee Account</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="email"
+                  placeholder="employee@company.com"
+                  value={newAccount.email}
+                  onChange={(e) => setNewAccount({...newAccount, email: e.target.value})}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="password"
+                  placeholder="16-character app password"
+                  value={newAccount.app_password}
+                  onChange={(e) => setNewAccount({...newAccount, app_password: e.target.value.replace(/\s+/g, '')})}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  maxLength="16"
+                />
+                <input
+                  type="text"
+                  placeholder="Employee Name"
+                  value={newAccount.employee_name}
+                  onChange={(e) => setNewAccount({...newAccount, employee_name: e.target.value})}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Department"
+                  value={newAccount.department}
+                  onChange={(e) => setNewAccount({...newAccount, department: e.target.value})}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="email"
+                  placeholder="Security Alert Email (optional)"
+                  value={newAccount.alert_email}
+                  onChange={(e) => setNewAccount({...newAccount, alert_email: e.target.value})}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={addEnterpriseAccount}
+                  disabled={loading || !newAccount.email || !newAccount.app_password || newAccount.app_password.length !== 16}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {loading ? 'Adding...' : 'Add Account'}
+                </button>
+              </div>
+            </div>
+
+            {/* Mass Actions */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={startAllMonitoring}
+                disabled={loading}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                🚀 Start All Monitoring
+              </button>
+              <button
+                onClick={stopAllMonitoring}
+                disabled={loading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                ⏸️ Stop All Monitoring
+              </button>
+            </div>
+
+            {/* Account List */}
+            <div className="border border-gray-200 rounded-lg">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h4 className="font-semibold text-gray-900">📋 Employee Accounts ({enterpriseAccounts.length})</h4>
+              </div>
+              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {enterpriseAccounts.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-gray-500">
+                    No accounts configured yet. Add your first employee account above.
+                  </div>
+                ) : (
+                  enterpriseAccounts.map((account, index) => (
+                    <div key={index} className="px-4 py-3 hover:bg-gray-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full mr-3 ${account.monitoring_active ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                            <div>
+                              <p className="font-medium text-gray-900">{account.employee_name || account.email}</p>
+                              <p className="text-sm text-gray-600">{account.email}</p>
+                              {account.department && (
+                                <p className="text-xs text-gray-500">📍 {account.department}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <div className="text-right text-sm">
+                            <p className="text-gray-900 font-medium">
+                              {account.total_processed || 0} processed
+                            </p>
+                            <p className="text-red-600">
+                              {account.threats_blocked || 0} blocked
+                            </p>
+                          </div>
+                          
+                          <button
+                            onClick={() => account.monitoring_active ? 
+                              stopAccountMonitoring(account.email) : 
+                              startAccountMonitoring(account.email)
+                            }
+                            className={`px-3 py-1 text-xs rounded-full ${
+                              account.monitoring_active 
+                                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                            }`}
+                          >
+                            {account.monitoring_active ? 'Stop' : 'Start'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Blocked Emails Panel */}
+        {showBlockedEmails && (
+          <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">🚫 Blocked Emails ({blockedEmails.length})</h3>
+              <button
+                onClick={() => setShowBlockedEmails(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="border border-gray-200 rounded-lg">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="grid grid-cols-5 gap-4 text-sm font-medium text-gray-700">
+                  <div>Employee</div>
+                  <div>From</div>
+                  <div>Subject</div>
+                  <div>Threat Level</div>
+                  <div>Blocked Time</div>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {blockedEmails.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-gray-500">
+                    No blocked emails yet. This is good news! 🎉
+                  </div>
+                ) : (
+                  blockedEmails.map((email, index) => (
+                    <div key={index} className="px-4 py-3 hover:bg-gray-50">
+                      <div className="grid grid-cols-5 gap-4 text-sm">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {email.employee_name || 'Unknown'}
+                          </p>
+                          <p className="text-gray-600 text-xs">
+                            {email.analysis_result?.monitored_account || 'N/A'}
+                          </p>
+                        </div>
+                        <div className="truncate">
+                          <p className="text-gray-900">
+                            {email.analysis_result?.from || 'Unknown Sender'}
+                          </p>
+                        </div>
+                        <div className="truncate">
+                          <p className="text-gray-900">
+                            {email.analysis_result?.subject || 'No Subject'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getThreatColor(email.threat_level)}`}>
+                            {email.threat_level}
+                          </span>
+                        </div>
+                        <div className="text-gray-600">
+                          {new Date(email.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Monitoring Dashboard */}
         {showDashboard && (
           <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
