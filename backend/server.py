@@ -796,6 +796,57 @@ async def start_imap_monitoring_task(alert_email: str, check_interval: int = 60)
         logger.error(f"IMAP monitoring task failed: {str(e)}")
         email_monitor.monitoring = False
 
+@api_router.get("/monitoring/stats")
+async def get_monitoring_stats():
+    """Get monitoring dashboard statistics"""
+    try:
+        # Get total analyses count
+        total_analyses = await db.email_analyses.count_documents({})
+        
+        # Get threat counts
+        critical_count = await db.email_analyses.count_documents({"threat_level": "CRITICAL"})
+        high_count = await db.email_analyses.count_documents({"threat_level": "HIGH"})
+        medium_count = await db.email_analyses.count_documents({"threat_level": "MEDIUM"})
+        
+        # Get recent analysis for last scan time
+        recent_analysis = await db.email_analyses.find_one(
+            {}, 
+            sort=[("timestamp", -1)]
+        )
+        
+        last_scan = None
+        if recent_analysis:
+            last_scan = recent_analysis.get('timestamp', datetime.utcnow()).strftime('%H:%M:%S')
+        
+        # Calculate uptime (simplified - since last restart)
+        uptime_minutes = 60  # Placeholder - you could track actual uptime
+        
+        return {
+            "totalProcessed": total_analyses,
+            "threatsFound": critical_count + high_count,
+            "criticalThreats": critical_count,
+            "highThreats": high_count,
+            "mediumThreats": medium_count,
+            "lastScan": last_scan,
+            "uptime": f"{uptime_minutes}m",
+            "alertsSent": critical_count + high_count,  # Assume alerts sent for high+ threats
+            "detectionRate": round((critical_count + high_count + medium_count) / max(total_analyses, 1) * 100, 1)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting monitoring stats: {str(e)}")
+        return {
+            "totalProcessed": 0,
+            "threatsFound": 0,
+            "criticalThreats": 0,
+            "highThreats": 0,
+            "mediumThreats": 0,
+            "lastScan": None,
+            "uptime": "0m",
+            "alertsSent": 0,
+            "detectionRate": 0
+        }
+
 # Legacy routes
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
