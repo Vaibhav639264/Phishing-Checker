@@ -322,20 +322,32 @@ Please analyze this email and provide a comprehensive threat assessment.
             url_pattern = r'https?://[^\s<>"\'()]+|www\.[^\s<>"\'()]+'
             urls = re.findall(url_pattern, email_content, re.IGNORECASE)
             
-            if urls:
-                advanced_url_analysis = await advanced_scanner.analyze_urls_advanced(urls)
-                results.update(advanced_url_analysis)
+            try:
+                if urls:
+                    advanced_url_analysis = await advanced_scanner.analyze_urls_advanced(urls)
+                    results.update(advanced_url_analysis)
+            except Exception as e:
+                logger.error(f"Advanced URL analysis failed: {str(e)}")
+                results['advanced_url_analysis_error'] = str(e)
             
             # Advanced attachment analysis
-            advanced_attachment_analysis = await advanced_scanner.analyze_attachments_advanced(email_msg)
-            results.update(advanced_attachment_analysis)
+            try:
+                advanced_attachment_analysis = await advanced_scanner.analyze_attachments_advanced(email_msg)
+                results.update(advanced_attachment_analysis)
+            except Exception as e:
+                logger.error(f"Advanced attachment analysis failed: {str(e)}")
+                results['advanced_attachment_analysis_error'] = str(e)
             
             # Calculate overall security risk
-            security_assessment = advanced_scanner.calculate_overall_risk_score(
-                results.get('advanced_url_analysis', {}),
-                results.get('advanced_attachment_analysis', {})
-            )
-            results.update(security_assessment)
+            try:
+                security_assessment = advanced_scanner.calculate_overall_risk_score(
+                    results.get('advanced_url_analysis', {}),
+                    results.get('advanced_attachment_analysis', {})
+                )
+                results.update(security_assessment)
+            except Exception as e:
+                logger.error(f"Security assessment failed: {str(e)}")
+                results['security_assessment_error'] = str(e)
             
             # LLM Analysis (enhanced with advanced findings)
             llm_results = await self.analyze_with_llm(email_content, results)
