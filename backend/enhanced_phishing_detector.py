@@ -6,7 +6,29 @@ import urllib.parse
 import base64
 from datetime import datetime
 import hashlib
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+import google.generativeai as genai
+
+class LlmChat:
+    def __init__(self, api_key, session_id, system_message):
+        self.api_key = api_key
+        self.system_message = system_message
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-pro')
+    
+    def with_model(self, provider, model_name):
+        return self
+    
+    async def chat(self, message):
+        try:
+            prompt = f"{self.system_message}\n\nUser: {message.text}"
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            return f"Analysis error: {str(e)}"
+
+class UserMessage:
+    def __init__(self, text):
+        self.text = text
 
 logger = logging.getLogger(__name__)
 
