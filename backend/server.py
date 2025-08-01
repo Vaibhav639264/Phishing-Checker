@@ -16,6 +16,7 @@ import urllib.parse
 import json
 from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
 from gmail_service import GmailService
+from imap_service import IMAPService
 from real_time_monitor import email_monitor
 
 ROOT_DIR = Path(__file__).parent
