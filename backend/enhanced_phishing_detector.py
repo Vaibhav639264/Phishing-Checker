@@ -89,6 +89,18 @@ class EnhancedPhishingDetector:
         try:
             logger.info(f"🔍 Starting comprehensive analysis of: {email_data.get('subject', 'No subject')}")
             
+            # Check if email is from trusted domain first
+            sender = email_data.get('from', '').lower()
+            sender_domain = ''
+            if '@' in sender:
+                sender_domain = sender.split('@')[-1].split('>')[0].strip()
+            
+            is_trusted_domain = False
+            for domain in self.legitimate_service_domains:
+                if sender_domain.endswith(domain) or sender_domain == domain:
+                    is_trusted_domain = True
+                    break
+            
             results = {
                 'filename': filename,
                 'email_info': {
@@ -99,7 +111,9 @@ class EnhancedPhishingDetector:
                     'reply_to': email_data.get('reply_to', ''),
                     'body_length': len(email_data.get('body', '')),
                     'has_html': bool(email_data.get('html_body', '')),
-                    'attachment_count': len(email_data.get('attachments', []))
+                    'attachment_count': len(email_data.get('attachments', [])),
+                    'trusted_domain': is_trusted_domain,
+                    'sender_domain': sender_domain
                 },
                 'threat_indicators': [],
                 'url_analysis': [],
@@ -111,50 +125,77 @@ class EnhancedPhishingDetector:
                 'detection_reasons': []
             }
             
-            # 1. Critical Pattern Detection (catches Office-365 type phishing)
-            critical_score = self._detect_critical_patterns(email_data, results)
-            
-            # 2. URL Analysis
-            url_score = self._analyze_urls_comprehensive(email_data, results)
-            
-            # 3. Sender Analysis
-            sender_score = self._analyze_sender_comprehensive(email_data, results)
-            
-            # 4. Content Analysis
-            content_score = self._analyze_content_comprehensive(email_data, results)
-            
-            # 5. Brand Impersonation Detection
-            brand_score = self._detect_brand_impersonation(email_data, results)
-            
-            # 6. Attachment Analysis
-            attachment_score = self._analyze_attachments_comprehensive(email_data, results)
-            
-            # Calculate overall score
-            total_score = critical_score + url_score + sender_score + content_score + brand_score + attachment_score
-            results['confidence_score'] = min(total_score, 100)
-            
-            # Determine threat level
-            if total_score >= 80 or critical_score >= 50:
-                results['threat_level'] = 'CRITICAL'
-            elif total_score >= 60:
-                results['threat_level'] = 'HIGH'
-            elif total_score >= 30:
-                results['threat_level'] = 'MEDIUM'
+            # If from trusted domain, apply conservative analysis
+            if is_trusted_domain:
+                logger.info(f"📧 Email from trusted domain {sender_domain} - applying conservative analysis")
+                # Only check for critical patterns, skip other checks
+                critical_score = self._detect_critical_patterns(email_data, results)
+                total_score = critical_score * 0.3  # Reduce score significantly for trusted domains
+                
+                # Very conservative threat level for trusted domains
+                if total_score >= 60:  # Much higher threshold
+                    results['threat_level'] = 'MEDIUM'
+                elif total_score >= 30:
+                    results['threat_level'] = 'LOW'
+                else:
+                    results['threat_level'] = 'LOW'
+                
+                results['confidence_score'] = min(total_score, 100)
+                
             else:
-                results['threat_level'] = 'LOW'
+                # Full analysis for untrusted domains
+                # 1. Critical Pattern Detection (catches Office-365 type phishing)
+                critical_score = self._detect_critical_patterns(email_data, results)
+                
+                # 2. URL Analysis
+                url_score = self._analyze_urls_comprehensive(email_data, results)
+                
+                # 3. Sender Analysis
+                sender_score = self._analyze_sender_comprehensive(email_data, results)
+                
+                # 4. Content Analysis
+                content_score = self._analyze_content_comprehensive(email_data, results)
+                
+                # 5. Brand Impersonation Detection
+                brand_score = self._detect_brand_impersonation(email_data, results)
+                
+                # 6. Attachment Analysis
+                attachment_score = self._analyze_attachments_comprehensive(email_data, results)
+                
+                # Calculate overall score
+                total_score = critical_score + url_score + sender_score + content_score + brand_score + attachment_score
+                results['confidence_score'] = min(total_score, 100)
+                
+                # Determine threat level
+                if total_score >= 80 or critical_score >= 50:
+                    results['threat_level'] = 'CRITICAL'
+                elif total_score >= 60:
+                    results['threat_level'] = 'HIGH'
+                elif total_score >= 30:
+                    results['threat_level'] = 'MEDIUM'
+                else:
+                    results['threat_level'] = 'LOW'
             
-            # Enhanced LLM Analysis
+            # Enhanced LLM Analysis (more conservative)
             if self.gemini_api_key:
                 llm_analysis = await self._enhanced_llm_analysis(email_data, results)
                 results['llm_analysis'] = llm_analysis
                 
-                # LLM can escalate threat level
-                if 'CRITICAL' in llm_analysis.upper() or 'PHISHING' in llm_analysis.upper():
-                    if results['threat_level'] in ['LOW', 'MEDIUM']:
-                        results['threat_level'] = 'HIGH'
-                        results['detection_reasons'].append('AI analysis identified critical threats')
+                # More sophisticated LLM escalation logic
+                if llm_analysis:
+                    llm_lower = llm_analysis.lower()
+                    # Only escalate if LLM clearly identifies it as phishing AND provides specific reasons
+                    if ('phishing: yes' in llm_lower or 'is this a phishing email? yes' in llm_lower) and not is_trusted_domain:
+                        if results['threat_level'] in ['LOW', 'MEDIUM']:
+                            results['threat_level'] = 'HIGH'
+                            results['detection_reasons'].append('AI analysis identified critical threats')
+                    # For trusted domains, be even more conservative
+                    elif is_trusted_domain and 'block' in llm_lower and 'definite phishing' in llm_lower:
+                        if results['threat_level'] == 'LOW':
+                            results['threat_level'] = 'MEDIUM'
+                            results['detection_reasons'].append('AI analysis identified potential concerns')
             
-            logger.info(f"🎯 Analysis complete: {results['threat_level']} threat (score: {results['confidence_score']})")
+            logger.info(f"🎯 Analysis complete: {results['threat_level']} threat (score: {results['confidence_score']}) - Trusted: {is_trusted_domain}")
             
             return results
             
