@@ -596,57 +596,91 @@ def test_comprehensive_detection_features(analysis_data):
         return False
 
 def main():
-    """Run all backend tests"""
-    print("🚀 Starting Backend API Tests for Email Phishing Detection")
-    print("=" * 60)
+    """Run all backend tests for enhanced phishing detection system"""
+    print("🚀 Starting Enhanced Email Phishing Detection Backend Tests")
+    print("=" * 70)
+    print("Testing IMAP integration, detection engine, monitoring, and alerts")
+    print("=" * 70)
     
     test_results = {}
     
     # Test 1: API Connectivity
-    test_results['connectivity'] = test_api_connectivity()
+    test_results['api_connectivity'] = test_api_connectivity()
     
-    if not test_results['connectivity']:
+    if not test_results['api_connectivity']:
         print("\n❌ API connectivity failed. Cannot proceed with other tests.")
         return test_results
     
-    # Test 2: Email Analysis (Phishing)
-    test_results['phishing_analysis'], phishing_data = test_email_analysis_phishing()
+    # Test 2: IMAP Connection Testing (without credentials)
+    test_results['imap_connection_test'] = test_imap_connection_without_credentials()
     
-    # Test 3: Email Analysis (Legitimate)
-    test_results['legitimate_analysis'], legitimate_data = test_email_analysis_legitimate()
+    # Test 3: IMAP Setup Testing (without credentials)
+    test_results['imap_setup_test'] = test_imap_setup_without_credentials()
     
-    # Test 4: LLM Integration (using phishing data)
-    test_results['llm_integration'] = test_llm_integration(phishing_data)
+    # Test 4: IMAP Status Endpoint
+    test_results['imap_status'] = test_imap_status()
     
-    # Test 5: Database Operations
-    test_results['database_operations'] = test_database_operations()
+    # Test 5: Core Detection Engine (Office-365 sample)
+    test_results['core_detection_engine'] = test_core_detection_engine()
     
-    # Test 6: Error Handling
-    test_results['error_handling'] = test_error_handling()
+    # Test 6: Manual Scan (should fail gracefully without IMAP)
+    test_results['manual_scan_no_imap'] = test_manual_scan_without_imap()
     
-    # Test 7: Comprehensive Detection Features
-    test_results['comprehensive_detection'] = test_comprehensive_detection_features(phishing_data)
+    # Test 7: Monitoring Endpoints
+    test_results['monitoring_endpoints'] = test_monitoring_endpoints()
+    
+    # Test 8: Analysis Storage
+    test_results['analysis_storage'] = test_analysis_storage()
+    
+    # Test 9: Comprehensive Error Handling
+    test_results['error_handling'] = test_error_handling_comprehensive()
     
     # Summary
-    print("\n" + "=" * 60)
-    print("📊 TEST SUMMARY")
-    print("=" * 60)
+    print("\n" + "=" * 70)
+    print("📊 ENHANCED PHISHING DETECTION TEST SUMMARY")
+    print("=" * 70)
     
     passed_tests = sum(1 for result in test_results.values() if result)
     total_tests = len(test_results)
     
     for test_name, result in test_results.items():
         status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{test_name.replace('_', ' ').title()}: {status}")
+        formatted_name = test_name.replace('_', ' ').title()
+        print(f"{formatted_name:<30}: {status}")
     
-    print(f"\nOverall: {passed_tests}/{total_tests} tests passed")
+    print(f"\nOverall Result: {passed_tests}/{total_tests} tests passed")
     
     if passed_tests == total_tests:
-        print("🎉 All backend tests passed!")
+        print("🎉 All enhanced phishing detection tests passed!")
+        print("✅ System is ready for production use")
     elif passed_tests >= total_tests * 0.8:
-        print("⚠️  Most tests passed with minor issues")
+        print("⚠️  Most tests passed - minor issues detected")
+        print("🔧 System functional but may need minor adjustments")
     else:
-        print("❌ Significant issues found in backend")
+        print("❌ Significant issues found in enhanced system")
+        print("🚨 System needs attention before production use")
+    
+    # Specific recommendations based on test results
+    print("\n" + "=" * 70)
+    print("📋 SYSTEM STATUS ASSESSMENT")
+    print("=" * 70)
+    
+    critical_components = [
+        ('core_detection_engine', 'Core Detection Engine'),
+        ('imap_connection_test', 'IMAP Connection Handling'),
+        ('error_handling', 'Error Handling'),
+        ('analysis_storage', 'Analysis Storage')
+    ]
+    
+    critical_passed = sum(1 for comp, _ in critical_components if test_results.get(comp, False))
+    
+    if critical_passed == len(critical_components):
+        print("✅ All critical components working properly")
+    else:
+        print("⚠️  Some critical components need attention:")
+        for comp, name in critical_components:
+            if not test_results.get(comp, False):
+                print(f"   - ❌ {name}")
     
     return test_results
 
