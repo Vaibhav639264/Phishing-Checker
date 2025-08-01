@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime
 import asyncio
+import email
 from robust_imap_service import RobustIMAPService
 from enhanced_phishing_detector import EnhancedPhishingDetector
 
