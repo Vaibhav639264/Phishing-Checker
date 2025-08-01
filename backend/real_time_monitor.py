@@ -156,6 +156,9 @@ Date: {email_data.get('date', '')}
     async def manual_scan_recent(self, max_emails: int = 50) -> Dict[str, Any]:
         """Manually scan recent emails"""
         try:
+            # Ensure detector is initialized
+            await self.initialize_detector()
+            
             logger.info(f"Starting manual scan of {max_emails} recent emails")
             
             # Get recent emails
