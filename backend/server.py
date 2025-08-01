@@ -61,6 +61,10 @@ class MonitoringRequest(BaseModel):
 class ManualScanRequest(BaseModel):
     max_emails: Optional[int] = 50
 
+class IMAPSetupRequest(BaseModel):
+    email: str
+    app_password: str
+
 # Phishing Detection Engine
 class PhishingDetector:
     def __init__(self):
