@@ -1,38 +1,109 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
 .App {
-    text-align: center;
+  min-height: 100vh;
 }
 
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
 }
 
-.App-link {
-    color: #61dafb;
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Loading animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Drag and drop styles */
+.drag-active {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+}
+
+/* Threat level badges */
+.threat-critical {
+  @apply bg-red-100 text-red-800 border-red-200;
+}
+
+.threat-high {
+  @apply bg-orange-100 text-orange-800 border-orange-200;
+}
+
+.threat-medium {
+  @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+}
+
+.threat-low {
+  @apply bg-green-100 text-green-800 border-green-200;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .grid-cols-1 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Button hover effects */
+.btn-primary {
+  @apply bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+}
+
+/* File upload area */
+.upload-area {
+  @apply border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-colors hover:border-gray-400;
+}
+
+.upload-area.active {
+  @apply border-blue-400 bg-blue-50;
+}
+
+/* Analysis results */
+.analysis-card {
+  @apply border rounded-lg p-4 mb-4;
+}
+
+.analysis-card.critical {
+  @apply border-red-200 bg-red-50;
+}
+
+.analysis-card.high {
+  @apply border-orange-200 bg-orange-50;
+}
+
+.analysis-card.medium {
+  @apply border-yellow-200 bg-yellow-50;
+}
+
+.analysis-card.low {
+  @apply border-green-200 bg-green-50;
 }
