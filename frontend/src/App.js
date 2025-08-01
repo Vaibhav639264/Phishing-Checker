@@ -275,7 +275,7 @@ function App() {
   const startMonitoring = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${API}/gmail/start-monitoring`, monitoringConfig);
+      const response = await axios.post(`${API}/imap/start-monitoring`, monitoringConfig);
       alert(response.data.message);
       await checkGmailStatus();
     } catch (error) {
@@ -288,7 +288,7 @@ function App() {
   const stopMonitoring = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${API}/gmail/stop-monitoring`);
+      const response = await axios.post(`${API}/imap/stop-monitoring`);
       alert(response.data.message);
       await checkGmailStatus();
     } catch (error) {
@@ -301,7 +301,7 @@ function App() {
   const manualScan = async () => {
     try {
       setManualScanLoading(true);
-      const response = await axios.post(`${API}/gmail/manual-scan`, { max_emails: 50 });
+      const response = await axios.post(`${API}/imap/manual-scan`, { max_emails: 50 });
       setScanResults(response.data.results);
       await fetchAnalyses(); // Refresh analyses
     } catch (error) {
