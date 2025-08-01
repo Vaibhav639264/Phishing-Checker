@@ -11,17 +11,45 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [analyses, setAnalyses] = useState([]);
+  
+  // Gmail integration state
+  const [gmailConfig, setGmailConfig] = useState({
+    client_id: '',
+    client_secret: '',
+    refresh_token: ''
+  });
+  const [gmailStatus, setGmailStatus] = useState({
+    configured: false,
+    monitoring_active: false
+  });
+  const [monitoringConfig, setMonitoringConfig] = useState({
+    alert_email: '',
+    check_interval: 60
+  });
+  const [showGmailSetup, setShowGmailSetup] = useState(false);
+  const [manualScanLoading, setManualScanLoading] = useState(false);
+  const [scanResults, setScanResults] = useState(null);
 
   useEffect(() => {
     fetchAnalyses();
+    checkGmailStatus();
   }, []);
 
   const fetchAnalyses = async () => {
     try {
       const response = await axios.get(`${API}/analyses`);
-      setAnalyses(response.data.slice(0, 5)); // Show last 5 analyses
+      setAnalyses(response.data.slice(0, 5));
     } catch (error) {
       console.error('Error fetching analyses:', error);
+    }
+  };
+
+  const checkGmailStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/gmail/status`);
+      setGmailStatus(response.data);
+    } catch (error) {
+      console.error('Error checking Gmail status:', error);
     }
   };
 
