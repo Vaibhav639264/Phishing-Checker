@@ -27,9 +27,11 @@ class IMAPService:
         """Initialize IMAP connection"""
         try:
             if not self.email_address or not self.app_password:
-                logger.error("Gmail credentials not found in environment")
+                logger.error(f"Gmail credentials missing - Email: {bool(self.email_address)}, Password: {bool(self.app_password)}")
                 return False
                 
+            logger.info(f"Attempting IMAP connection for {self.email_address}")
+            
             # Create SSL context
             context = ssl.create_default_context()
             
@@ -42,6 +44,9 @@ class IMAPService:
             logger.info(f"IMAP connection established for {self.email_address}")
             return True
             
+        except imaplib.IMAP4.error as e:
+            logger.error(f"IMAP authentication failed: {str(e)}")
+            return False
         except Exception as e:
             logger.error(f"Failed to initialize IMAP connection: {str(e)}")
             return False
