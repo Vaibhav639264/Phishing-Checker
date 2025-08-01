@@ -736,7 +736,7 @@ async def download_blocked_emails_report(format: str):
                 })
             
             import json
-            json_content = json.dumps(json_data, indent=2, ensure_ascii=False)
+            json_content = json.dumps(json_data, indent=2, ensure_ascii=False, default=str)
             
             return {
                 'success': True,
