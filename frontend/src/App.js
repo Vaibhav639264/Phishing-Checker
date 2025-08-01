@@ -130,6 +130,65 @@ function App() {
     setAnalysisResult(null);
   };
 
+  // Gmail Integration Functions
+  const setupGmail = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/gmail/setup`, gmailConfig);
+      
+      if (response.data.auth_url) {
+        alert(`Please visit this URL to authorize: ${response.data.auth_url}`);
+      } else {
+        alert('Gmail setup successful!');
+        await checkGmailStatus();
+        setShowGmailSetup(false);
+      }
+    } catch (error) {
+      alert(`Gmail setup failed: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startMonitoring = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/gmail/start-monitoring`, monitoringConfig);
+      alert(response.data.message);
+      await checkGmailStatus();
+    } catch (error) {
+      alert(`Failed to start monitoring: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stopMonitoring = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/gmail/stop-monitoring`);
+      alert(response.data.message);
+      await checkGmailStatus();
+    } catch (error) {
+      alert(`Failed to stop monitoring: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const manualScan = async () => {
+    try {
+      setManualScanLoading(true);
+      const response = await axios.post(`${API}/gmail/manual-scan`, { max_emails: 50 });
+      setScanResults(response.data.results);
+      await fetchAnalyses(); // Refresh analyses
+    } catch (error) {
+      alert(`Manual scan failed: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setManualScanLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
