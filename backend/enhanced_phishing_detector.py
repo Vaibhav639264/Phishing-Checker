@@ -623,8 +623,6 @@ Please provide:
 2. What type of email is this? (legitimate service email, potential phishing, etc.)
 3. Key reasons for your assessment
 4. Recommended action (BLOCK/ALLOW/REVIEW)
-3. Key threat indicators you identify
-4. Recommended threat level (LOW/MEDIUM/HIGH/CRITICAL)
 """
             
             user_message = UserMessage(text=analysis_prompt)
