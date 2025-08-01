@@ -859,6 +859,173 @@ async def get_monitoring_stats():
             "detectionRate": 0
         }
 
+# Enterprise Multi-Account Endpoints
+@api_router.post("/enterprise/accounts/add")
+async def add_enterprise_account(request: MultiAccountRequest):
+    """Add a new Gmail account for enterprise monitoring"""
+    try:
+        result = await multi_account_mgr.add_account(
+            email=request.email,
+            app_password=request.app_password,
+            employee_name=request.employee_name,
+            department=request.department,
+            alert_email=request.alert_email or request.email
+        )
+        
+        if result['success']:
+            return {
+                'success': True,
+                'message': f'Added account for {request.employee_name or request.email}',
+                'account': result['account']
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result['message'])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add account: {str(e)}")
+
+@api_router.delete("/enterprise/accounts/remove")
+async def remove_enterprise_account(request: AccountActionRequest):
+    """Remove an account from enterprise monitoring"""
+    try:
+        result = await multi_account_mgr.remove_account(request.email)
+        
+        if result['success']:
+            return result
+        else:
+            raise HTTPException(status_code=404, detail=result['message'])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove account: {str(e)}")
+
+@api_router.post("/enterprise/accounts/{email}/start-monitoring")
+async def start_account_monitoring(email: str):
+    """Start monitoring for a specific account"""
+    try:
+        result = await multi_account_mgr.start_monitoring(email)
+        
+        if result['success']:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result['message'])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start monitoring: {str(e)}")
+
+@api_router.post("/enterprise/accounts/{email}/stop-monitoring")
+async def stop_account_monitoring(email: str):
+    """Stop monitoring for a specific account"""
+    try:
+        result = await multi_account_mgr.stop_monitoring(email)
+        
+        if result['success']:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result['message'])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stop monitoring: {str(e)}")
+
+@api_router.get("/enterprise/accounts")
+async def get_all_enterprise_accounts():
+    """Get all configured enterprise accounts"""
+    try:
+        accounts = await multi_account_mgr.get_all_accounts()
+        return {
+            'success': True,
+            'accounts': accounts,
+            'total_accounts': len(accounts)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get accounts: {str(e)}")
+
+@api_router.get("/enterprise/blocked-emails")
+async def get_blocked_emails(account_email: Optional[str] = None, limit: int = 100):
+    """Get blocked emails for specific account or all accounts"""
+    try:
+        blocked_emails = await multi_account_mgr.get_blocked_emails(account_email, limit)
+        return {
+            'success': True,
+            'blocked_emails': blocked_emails,
+            'total_blocked': len(blocked_emails)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get blocked emails: {str(e)}")
+
+@api_router.get("/enterprise/stats")
+async def get_enterprise_statistics():
+    """Get enterprise-wide monitoring statistics"""
+    try:
+        stats = await multi_account_mgr.get_enterprise_stats()
+        return {
+            'success': True,
+            'enterprise_stats': stats
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get enterprise stats: {str(e)}")
+
+@api_router.post("/enterprise/monitoring/start-all")
+async def start_all_monitoring():
+    """Start monitoring for all configured accounts"""
+    try:
+        result = await multi_account_mgr.start_all_monitoring()
+        
+        if result['success']:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result['message'])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start all monitoring: {str(e)}")
+
+@api_router.post("/enterprise/monitoring/stop-all")
+async def stop_all_monitoring():
+    """Stop monitoring for all accounts"""
+    try:
+        result = await multi_account_mgr.stop_all_monitoring()
+        
+        if result['success']:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result['message'])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stop all monitoring: {str(e)}")
+
+@api_router.post("/enterprise/accounts/bulk-add")
+async def bulk_add_accounts(accounts: List[MultiAccountRequest]):
+    """Bulk add multiple accounts for enterprise monitoring"""
+    try:
+        results = []
+        
+        for account_req in accounts:
+            result = await multi_account_mgr.add_account(
+                email=account_req.email,
+                app_password=account_req.app_password,
+                employee_name=account_req.employee_name,
+                department=account_req.department,
+                alert_email=account_req.alert_email or account_req.email
+            )
+            results.append({
+                'email': account_req.email,
+                'success': result['success'],
+                'message': result['message']
+            })
+        
+        successful = len([r for r in results if r['success']])
+        
+        return {
+            'success': True,
+            'message': f'Added {successful}/{len(accounts)} accounts successfully',
+            'results': results
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bulk add failed: {str(e)}")
+
 # Legacy routes
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
