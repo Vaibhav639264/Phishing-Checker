@@ -389,11 +389,25 @@ function App() {
             
             <button
               onClick={setupImap}
-              disabled={loading || !imapConfig.email || !imapConfig.app_password}
+              disabled={
+                loading || 
+                !imapConfig.email || 
+                !imapConfig.app_password || 
+                imapConfig.app_password.length !== 16 ||
+                !imapConfig.email.includes('@gmail.com')
+              }
               className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Setting up IMAP...' : 'Setup IMAP Connection'}
+              {loading ? 'Testing IMAP Connection...' : 'Setup IMAP Connection'}
             </button>
+            
+            {(!imapConfig.email.includes('@gmail.com') && imapConfig.email) && (
+              <p className="text-red-500 text-sm mt-2">⚠️ Please use a Gmail address</p>
+            )}
+            
+            {(imapConfig.app_password && imapConfig.app_password.length !== 16) && (
+              <p className="text-red-500 text-sm mt-2">⚠️ App password must be exactly 16 characters</p>
+            )}
           </div>
         )}
 
