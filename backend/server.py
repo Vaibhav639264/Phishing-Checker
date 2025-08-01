@@ -319,16 +319,16 @@ async def start_monitoring(request: MonitoringRequest, background_tasks: Backgro
     """Start real-time monitoring"""
     global monitoring_active, monitoring_task
     
+    if not robust_imap:
+        raise HTTPException(status_code=400, detail="IMAP not configured. Please setup IMAP connection first.")
+    
+    if monitoring_active:
+        return {
+            'success': False,
+            'message': 'Monitoring is already active'
+        }
+    
     try:
-        if not robust_imap:
-            raise HTTPException(status_code=400, detail="IMAP not configured. Please setup IMAP connection first.")
-        
-        if monitoring_active:
-            return {
-                'success': False,
-                'message': 'Monitoring is already active'
-            }
-        
         logger.info(f"🚀 Starting real-time monitoring with alert email: {request.alert_email}")
         
         # Start monitoring task
