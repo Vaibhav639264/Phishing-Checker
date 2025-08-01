@@ -53,7 +53,8 @@ class RealTimeEmailMonitor:
             # Ensure detector is initialized
             await self.initialize_detector()
             
-            logger.info(f"Processing new email from: {email_data.get('from', 'Unknown')}")
+            logger.info(f"🔍 Processing new email from: {email_data.get('from', 'Unknown')}")
+            logger.info(f"📧 Subject: {email_data.get('subject', 'No subject')}")
             
             # Convert email data to email format for analysis
             email_content = self._convert_to_email_format(email_data)
@@ -61,38 +62,55 @@ class RealTimeEmailMonitor:
             # Analyze with existing phishing detector
             analysis_result = await self.detector.analyze_email(
                 email_content, 
-                f"gmail_{email_data.get('id', 'unknown')}.eml"
+                f"monitored_{email_data.get('id', 'unknown')}.eml"
             )
             
             # Check threat level
             threat_level = analysis_result.get('threat_level', 'LOW')
+            logger.info(f"🎯 Threat level detected: {threat_level}")
+            
+            # Store analysis result first
+            await self._store_analysis_result(email_data, analysis_result)
             
             if threat_level in ['HIGH', 'CRITICAL']:
-                logger.warning(f"PHISHING DETECTED! Threat level: {threat_level}")
+                logger.warning(f"🚨 PHISHING DETECTED! Threat level: {threat_level}")
+                logger.warning(f"📨 From: {email_data.get('from')}")
+                logger.warning(f"📧 Subject: {email_data.get('subject')}")
                 
                 # Take automated actions
                 await self._take_automated_actions(email_data, analysis_result)
                 
-                # Store analysis result
-                await self._store_analysis_result(email_data, analysis_result)
-                
             elif threat_level == 'MEDIUM':
-                logger.info(f"Suspicious email detected (MEDIUM threat)")
+                logger.info(f"⚠️ Suspicious email detected (MEDIUM threat)")
                 
-                # Send alert but don't block automatically
+                # Send alert but don't block automatically for MEDIUM threats
                 if self.alert_email:
-                    await self.gmail_service.send_alert_notification(
+                    alert_success = await self._send_security_alert(
                         {**analysis_result, **email_data}, 
-                        self.alert_email
+                        self.alert_email,
+                        threat_level
                     )
+                    logger.info(f"📧 Alert sent: {'✅' if alert_success else '❌'}")
                 
-                await self._store_analysis_result(email_data, analysis_result)
-            
             else:
-                logger.debug(f"Email appears legitimate (threat level: {threat_level})")
+                logger.debug(f"✅ Email appears legitimate (threat level: {threat_level})")
                 
         except Exception as e:
-            logger.error(f"Error processing email: {str(e)}")
+            logger.error(f"❌ Error processing email: {str(e)}")
+            
+    async def _send_security_alert(self, threat_details: Dict[str, Any], recipient_email: str, threat_level: str) -> bool:
+        """Send security alert email"""
+        try:
+            # Use IMAP service to send alert
+            if hasattr(self, 'gmail_service') and hasattr(self.gmail_service, 'send_alert_email'):
+                return await self.gmail_service.send_alert_email(threat_details, recipient_email)
+            else:
+                logger.warning("No email service available for sending alerts")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to send security alert: {str(e)}")
+            return False
     
     async def _take_automated_actions(self, email_data: Dict[str, Any], analysis_result: Dict[str, Any]):
         """Take automated actions for high-threat emails"""
