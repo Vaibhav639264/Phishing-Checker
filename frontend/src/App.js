@@ -316,7 +316,82 @@ function App() {
           </div>
         </div>
 
-        {/* Gmail Setup Panel */}
+        {/* IMAP Setup Panel */}
+        {showImapSetup && (
+          <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Gmail IMAP Setup (Recommended)
+            </h3>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start">
+                <div className="text-blue-500 mr-2">ℹ️</div>
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-2">How to get Gmail App Password:</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Go to Google Account settings</li>
+                    <li>Enable 2-Factor Authentication</li>
+                    <li>Go to "App passwords" section</li>
+                    <li>Generate password for "Mail" app</li>
+                    <li>Use that 16-character password below</li>
+                  </ol>
+                  <a 
+                    href="https://myaccount.google.com/apppasswords" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline mt-2 inline-block"
+                  >
+                    → Generate App Password
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gmail Address</label>
+                <input
+                  type="email"
+                  value={imapConfig.email}
+                  onChange={(e) => setImapConfig({...imapConfig, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="your-email@gmail.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">App Password</label>
+                <input
+                  type="password"
+                  value={imapConfig.app_password}
+                  onChange={(e) => setImapConfig({...imapConfig, app_password: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="16-character app password"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Alert Email</label>
+              <input
+                type="email"
+                value={monitoringConfig.alert_email}
+                onChange={(e) => setMonitoringConfig({...monitoringConfig, alert_email: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="alerts@yourdomain.com"
+              />
+            </div>
+            
+            <button
+              onClick={setupImap}
+              disabled={loading || !imapConfig.email || !imapConfig.app_password}
+              className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Setting up IMAP...' : 'Setup IMAP Connection'}
+            </button>
+          </div>
+        )}
+
+        {/* Gmail OAuth Setup Panel */}
         {showGmailSetup && (
           <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Gmail API Setup</h3>
