@@ -115,7 +115,10 @@ class RealTimeEmailMonitor:
     async def _store_analysis_result(self, email_data: Dict[str, Any], analysis_result: Dict[str, Any]):
         """Store analysis result in database"""
         try:
-            email_analysis = EmailAnalysisResult(
+            # Ensure detector is initialized
+            await self.initialize_detector()
+            
+            email_analysis = self.EmailAnalysisResult(
                 filename=f"gmail_{email_data.get('id', 'unknown')}.eml",
                 analysis_result={
                     **analysis_result,
@@ -125,7 +128,7 @@ class RealTimeEmailMonitor:
                 threat_level=analysis_result.get('threat_level', 'UNKNOWN')
             )
             
-            await db.email_analyses.insert_one(email_analysis.dict())
+            await self.db.email_analyses.insert_one(email_analysis.dict())
             logger.info("Analysis result stored in database")
             
         except Exception as e:
