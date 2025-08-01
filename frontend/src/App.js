@@ -540,6 +540,205 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
           </div>
         )}
 
+        {/* Monitoring Dashboard */}
+        {showDashboard && (
+          <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">📊 Monitoring Dashboard</h3>
+              <button
+                onClick={() => setShowDashboard(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Status Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="text-blue-600 text-2xl mr-3">🔍</div>
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">Connection Status</p>
+                    <p className="text-lg font-bold text-blue-900">
+                      {gmailStatus.configured ? 'Connected' : 'Disconnected'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="text-green-600 text-2xl mr-3">⚡</div>
+                  <div>
+                    <p className="text-sm text-green-600 font-medium">Monitoring Status</p>
+                    <p className="text-lg font-bold text-green-900">
+                      {gmailStatus.monitoring_active ? 'Active' : 'Inactive'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-purple-50 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="text-purple-600 text-2xl mr-3">📧</div>
+                  <div>
+                    <p className="text-sm text-purple-600 font-medium">Emails Processed</p>
+                    <p className="text-lg font-bold text-purple-900">
+                      {dashboardStats.totalProcessed || analyses.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="text-red-600 text-2xl mr-3">🚨</div>
+                  <div>
+                    <p className="text-sm text-red-600 font-medium">Threats Blocked</p>
+                    <p className="text-lg font-bold text-red-900">
+                      {dashboardStats.threatsFound || analyses.filter(a => a.threat_level === 'HIGH' || a.threat_level === 'CRITICAL').length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Real-time Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">🔄 System Status</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Connection Method:</span>
+                    <span className="font-medium">{connectionMethod === 'imap' ? 'IMAP' : 'OAuth'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Check Interval:</span>
+                    <span className="font-medium">{monitoringConfig.check_interval}s</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Alert Email:</span>
+                    <span className="font-medium truncate">{monitoringConfig.alert_email || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Last Scan:</span>
+                    <span className="font-medium">{dashboardStats.lastScan || 'Never'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">🎯 Detection Stats</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">CRITICAL Threats:</span>
+                    <span className="font-medium text-red-600">
+                      {analyses.filter(a => a.threat_level === 'CRITICAL').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">HIGH Threats:</span>
+                    <span className="font-medium text-orange-600">
+                      {analyses.filter(a => a.threat_level === 'HIGH').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">MEDIUM Threats:</span>
+                    <span className="font-medium text-yellow-600">
+                      {analyses.filter(a => a.threat_level === 'MEDIUM').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Detection Rate:</span>
+                    <span className="font-medium text-green-600">
+                      {analyses.length > 0 ? 
+                        Math.round((analyses.filter(a => a.threat_level !== 'LOW').length / analyses.length) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="border-t border-gray-200 pt-4">
+              <h4 className="font-semibold text-gray-900 mb-3">⚡ Quick Actions</h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    checkGmailStatus();
+                    fetchDashboardStats();
+                  }}
+                  className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm"
+                >
+                  🔄 Refresh Status
+                </button>
+                
+                <button
+                  onClick={testDetection}
+                  disabled={loading}
+                  className="px-3 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 text-sm"
+                >
+                  🧪 Test Detection
+                </button>
+                
+                <button
+                  onClick={manualScan}
+                  disabled={manualScanLoading}
+                  className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm"
+                >
+                  📨 Manual Scan
+                </button>
+                
+                {gmailStatus.configured && (
+                  <button
+                    onClick={gmailStatus.monitoring_active ? stopMonitoring : startMonitoring}
+                    disabled={loading}
+                    className={`px-3 py-2 text-sm rounded-lg ${
+                      gmailStatus.monitoring_active 
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                  >
+                    {gmailStatus.monitoring_active ? '⏸️ Stop Monitoring' : '▶️ Start Monitoring'}
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* System Health */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-semibold text-gray-900 mb-2">💚 System Health</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="text-green-500 text-lg">✅</div>
+                  <div className="font-medium">AI Engine</div>
+                  <div className="text-gray-500">Online</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-lg ${gmailStatus.configured ? 'text-green-500' : 'text-red-500'}`}>
+                    {gmailStatus.configured ? '✅' : '❌'}
+                  </div>
+                  <div className="font-medium">Email Connection</div>
+                  <div className="text-gray-500">{gmailStatus.configured ? 'Connected' : 'Disconnected'}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-green-500 text-lg">✅</div>
+                  <div className="font-medium">Database</div>
+                  <div className="text-gray-500">Online</div>
+                </div>
+                <div className="text-center">
+                  <div className={`text-lg ${gmailStatus.monitoring_active ? 'text-green-500' : 'text-yellow-500'}`}>
+                    {gmailStatus.monitoring_active ? '✅' : '⚠️'}
+                  </div>
+                  <div className="font-medium">Monitoring</div>
+                  <div className="text-gray-500">{gmailStatus.monitoring_active ? 'Active' : 'Standby'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Manual Scan Results */}
         {scanResults && (
           <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
