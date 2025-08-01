@@ -279,6 +279,11 @@ class EnhancedPhishingDetector:
         if '@' in sender:
             sender_domain = sender.split('@')[-1].split('>')[0].strip()
         
+        # Skip analysis if from whitelisted legitimate service domains
+        for domain in self.legitimate_service_domains:
+            if sender_domain.endswith(domain) or sender_domain == domain:
+                return 0  # No impersonation score for whitelisted domains
+
         sender_analysis = {
             'sender': sender,
             'domain': sender_domain,
