@@ -3,6 +3,7 @@ import email
 import asyncio
 import logging
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
