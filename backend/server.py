@@ -558,14 +558,26 @@ async def setup_imap(request: IMAPSetupRequest):
         os.environ['GMAIL_EMAIL'] = request.email
         os.environ['GMAIL_APP_PASSWORD'] = request.app_password
         
-        # Test connection
-        test_result = await imap_service.test_connection()
+        # Create new IMAP service instance with updated credentials
+        test_imap = IMAPService()
+        test_result = await test_imap.test_connection()
         
-        return {
-            'success': test_result['status'] == 'success',
-            'message': 'IMAP connection configured successfully' if test_result['status'] == 'success' else 'IMAP setup failed',
-            'connection_test': test_result
-        }
+        if test_result['status'] == 'success':
+            # Update the global imap_service with new credentials
+            global imap_service
+            imap_service = test_imap
+            
+            return {
+                'success': True,
+                'message': 'IMAP connection configured successfully',
+                'connection_test': test_result
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'IMAP connection failed: {test_result.get("message", "Unknown error")}',
+                'connection_test': test_result
+            }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"IMAP setup failed: {str(e)}")
