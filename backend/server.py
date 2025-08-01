@@ -571,6 +571,171 @@ Date: {email_data.get('date', '')}
     except Exception as e:
         logger.error(f"❌ Error processing monitored email: {str(e)}")
 
+@api_router.get("/reports/blocked-emails/{format}")
+async def download_blocked_emails_report(format: str):
+    """Generate and download report in multiple formats (csv, pdf, excel, json)"""
+    try:
+        # Get all analyses with High/Critical threat levels
+        blocked_analyses = await db.email_analyses.find({
+            "threat_level": {"$in": ["HIGH", "CRITICAL"]}
+        }).sort("timestamp", -1).to_list(1000)
+        
+        filename_base = f'blocked_emails_report_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}'
+        
+        if format.lower() == 'csv':
+            # Generate CSV content
+            csv_content = "Timestamp,Sender,Receiver,Subject,Threat Level,Confidence Score,Detection Reasons\n"
+            
+            for analysis in blocked_analyses:
+                email_info = analysis.get('email_info', {})
+                timestamp = analysis.get('timestamp', '')
+                sender = email_info.get('from', 'N/A').replace(',', ';')
+                receiver = email_info.get('to', 'N/A').replace(',', ';')
+                subject = email_info.get('subject', 'N/A').replace(',', ';')
+                threat_level = analysis.get('threat_level', 'UNKNOWN')
+                confidence = analysis.get('confidence_score', 0)
+                reasons = '; '.join(analysis.get('detection_reasons', [])).replace(',', ';')
+                
+                csv_content += f'"{timestamp}","{sender}","{receiver}","{subject}","{threat_level}","{confidence}","{reasons}"\n'
+            
+            return {
+                'success': True,
+                'filename': f'{filename_base}.csv',
+                'content': csv_content,
+                'content_type': 'text/csv',
+                'total_blocked': len(blocked_analyses)
+            }
+            
+        elif format.lower() == 'json':
+            # Generate JSON content
+            json_data = {
+                'report_generated': datetime.utcnow().isoformat(),
+                'total_blocked_emails': len(blocked_analyses),
+                'blocked_emails': []
+            }
+            
+            for analysis in blocked_analyses:
+                email_info = analysis.get('email_info', {})
+                json_data['blocked_emails'].append({
+                    'timestamp': analysis.get('timestamp', ''),
+                    'sender': email_info.get('from', 'N/A'),
+                    'receiver': email_info.get('to', 'N/A'),
+                    'subject': email_info.get('subject', 'N/A'),
+                    'threat_level': analysis.get('threat_level', 'UNKNOWN'),
+                    'confidence_score': analysis.get('confidence_score', 0),
+                    'detection_reasons': analysis.get('detection_reasons', []),
+                    'email_content': email_info.get('body', '')[:500] + '...' if email_info.get('body', '') else '',
+                    'threat_indicators': analysis.get('threat_indicators', []),
+                    'url_analysis': analysis.get('url_analysis', [])
+                })
+            
+            import json
+            json_content = json.dumps(json_data, indent=2, ensure_ascii=False)
+            
+            return {
+                'success': True,
+                'filename': f'{filename_base}.json',
+                'content': json_content,
+                'content_type': 'application/json',
+                'total_blocked': len(blocked_analyses)
+            }
+            
+        elif format.lower() in ['excel', 'xlsx']:
+            # Generate Excel content (simplified - would need openpyxl in production)
+            excel_data = []
+            excel_data.append(['Timestamp', 'Sender', 'Receiver', 'Subject', 'Threat Level', 'Confidence Score', 'Detection Reasons'])
+            
+            for analysis in blocked_analyses:
+                email_info = analysis.get('email_info', {})
+                excel_data.append([
+                    analysis.get('timestamp', ''),
+                    email_info.get('from', 'N/A'),
+                    email_info.get('to', 'N/A'),
+                    email_info.get('subject', 'N/A'),
+                    analysis.get('threat_level', 'UNKNOWN'),
+                    analysis.get('confidence_score', 0),
+                    '; '.join(analysis.get('detection_reasons', []))
+                ])
+            
+            # Convert to CSV format for now (in production, use openpyxl)
+            csv_content = '\n'.join([','.join([f'"{str(cell)}"' for cell in row]) for row in excel_data])
+            
+            return {
+                'success': True,
+                'filename': f'{filename_base}.xlsx',
+                'content': csv_content,
+                'content_type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'total_blocked': len(blocked_analyses),
+                'note': 'Excel format delivered as CSV - upgrade to openpyxl for true Excel support'
+            }
+            
+        elif format.lower() == 'pdf':
+            # Generate PDF content (simplified HTML-to-PDF approach)
+            html_content = f"""
+            <html>
+            <head>
+                <title>Blocked Emails Report</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                    table {{ border-collapse: collapse; width: 100%; }}
+                    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                    th {{ background-color: #f2f2f2; }}
+                    .header {{ color: #d32f2f; margin-bottom: 20px; }}
+                </style>
+            </head>
+            <body>
+                <h1 class="header">🚨 Blocked Emails Security Report</h1>
+                <p><strong>Generated:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
+                <p><strong>Total Blocked:</strong> {len(blocked_analyses)} emails</p>
+                
+                <table>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Sender</th>
+                        <th>Receiver</th>
+                        <th>Subject</th>
+                        <th>Threat Level</th>
+                        <th>Confidence</th>
+                        <th>Detection Reasons</th>
+                    </tr>
+            """
+            
+            for analysis in blocked_analyses:
+                email_info = analysis.get('email_info', {})
+                html_content += f"""
+                    <tr>
+                        <td>{analysis.get('timestamp', '')}</td>
+                        <td>{email_info.get('from', 'N/A')}</td>
+                        <td>{email_info.get('to', 'N/A')}</td>
+                        <td>{email_info.get('subject', 'N/A')}</td>
+                        <td>{analysis.get('threat_level', 'UNKNOWN')}</td>
+                        <td>{analysis.get('confidence_score', 0)}%</td>
+                        <td>{'; '.join(analysis.get('detection_reasons', []))}</td>
+                    </tr>
+                """
+            
+            html_content += """
+                </table>
+            </body>
+            </html>
+            """
+            
+            return {
+                'success': True,
+                'filename': f'{filename_base}.pdf',
+                'content': html_content,
+                'content_type': 'text/html',
+                'total_blocked': len(blocked_analyses),
+                'note': 'PDF format delivered as HTML - upgrade to wkhtmltopdf for true PDF support'
+            }
+        
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported format. Use: csv, json, excel, or pdf")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to generate report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
+
 @api_router.get("/reports/blocked-emails")
 async def download_blocked_emails_report():
     """Generate and download report of all blocked emails"""
