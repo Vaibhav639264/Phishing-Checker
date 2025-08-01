@@ -170,16 +170,23 @@ class IMAPService:
     async def send_alert_email(self, threat_details: Dict[str, Any], recipient_email: str) -> bool:
         """Send alert email via SMTP"""
         try:
+            logger.info(f"🚨 Sending security alert to {recipient_email}")
+            
             # Create message
             msg = MIMEMultipart()
             msg['From'] = self.email_address
             msg['To'] = recipient_email
             msg['Subject'] = f"🚨 PHISHING ALERT: {threat_details.get('threat_level', 'HIGH')} Threat Detected"
             
+            # Get account info
+            monitored_account = threat_details.get('monitored_account', 'Unknown Account')
+            employee_name = threat_details.get('account_config', {}).get('employee_name', 'Unknown Employee')
+            
             # Email body
             body = f"""
-PHISHING EMAIL DETECTED AND BLOCKED
+🚨 PHISHING EMAIL DETECTED AND BLOCKED
 
+AFFECTED ACCOUNT: {employee_name} ({monitored_account})
 Threat Level: {threat_details.get('threat_level', 'Unknown')}
 From: {threat_details.get('from', 'Unknown')}
 Subject: {threat_details.get('subject', 'Unknown')}
@@ -193,7 +200,15 @@ ACTIONS TAKEN:
 DETECTION DETAILS:
 {self._format_threat_details(threat_details)}
 
+EMPLOYEE INFORMATION:
+👤 Name: {employee_name}
+📧 Email: {monitored_account}
+🏢 Department: {threat_details.get('account_config', {}).get('department', 'Not specified')}
+
 This email has been automatically processed by your Email Phishing Detector.
+No action required from the employee.
+
+For questions, contact your IT Security team.
             """
             
             msg.attach(MIMEText(body, 'plain'))
@@ -208,11 +223,11 @@ This email has been automatically processed by your Email Phishing Detector.
             server.sendmail(self.email_address, recipient_email, text)
             server.quit()
             
-            logger.info(f"Alert email sent to {recipient_email}")
+            logger.info(f"✅ Alert email sent successfully to {recipient_email}")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to send alert email: {str(e)}")
+            logger.error(f"❌ Failed to send alert email: {str(e)}")
             return False
 
     def _format_threat_details(self, details: Dict[str, Any]) -> str:
