@@ -3,16 +3,23 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 from gmail_service import GmailService
-from server import PhishingDetector, db, EmailAnalysisResult
 
 logger = logging.getLogger(__name__)
 
 class RealTimeEmailMonitor:
     def __init__(self):
         self.gmail_service = GmailService()
-        self.detector = PhishingDetector()
+        self.detector = None  # Initialize later to avoid circular import
         self.monitoring = False
         self.alert_email = None  # Set this to user's email for alerts
+        
+    async def initialize_detector(self):
+        """Initialize detector to avoid circular import"""
+        if self.detector is None:
+            from server import PhishingDetector, db, EmailAnalysisResult
+            self.detector = PhishingDetector()
+            self.db = db
+            self.EmailAnalysisResult = EmailAnalysisResult
         
     async def start_monitoring(self, alert_email: str = None, check_interval: int = 60):
         """Start real-time email monitoring"""
