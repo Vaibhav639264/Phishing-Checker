@@ -47,7 +47,25 @@ function App() {
   useEffect(() => {
     fetchAnalyses();
     checkGmailStatus();
+    fetchDashboardStats();
+    
+    // Update dashboard stats every 30 seconds
+    const interval = setInterval(() => {
+      fetchDashboardStats();
+      checkGmailStatus();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await axios.get(`${API}/monitoring/stats`);
+      setDashboardStats(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
 
   const fetchAnalyses = async () => {
     try {
