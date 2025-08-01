@@ -362,10 +362,42 @@ function App() {
   const manualScan = async () => {
     try {
       setManualScanLoading(true);
+      setScanProgress(0);
+      setScanStatus('Connecting to Gmail...');
+      setTotalEmailsToScan(50);
+      
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setScanProgress(prev => {
+          if (prev < 90) {
+            const newProgress = prev + Math.random() * 10;
+            if (newProgress < 30) setScanStatus('Fetching emails from inbox...');
+            else if (newProgress < 60) setScanStatus('Analyzing emails for threats...');
+            else if (newProgress < 90) setScanStatus('Processing results...');
+            return newProgress;
+          }
+          return prev;
+        });
+      }, 500);
+      
       const response = await axios.post(`${API}/imap/manual-scan`, { max_emails: 50 });
+      
+      clearInterval(progressInterval);
+      setScanProgress(100);
+      setScanStatus('Scan completed!');
+      
       setScanResults(response.data.results);
       await fetchAnalyses(); // Refresh analyses
+      
+      // Reset progress after 2 seconds
+      setTimeout(() => {
+        setScanProgress(0);
+        setScanStatus('');
+      }, 2000);
+      
     } catch (error) {
+      setScanProgress(0);
+      setScanStatus('');
       alert(`Manual scan failed: ${error.response?.data?.detail || error.message}`);
     } finally {
       setManualScanLoading(false);
