@@ -67,6 +67,16 @@ class IMAPSetupRequest(BaseModel):
     email: str
     app_password: str
 
+class MultiAccountRequest(BaseModel):
+    email: str
+    app_password: str
+    employee_name: Optional[str] = ""
+    department: Optional[str] = ""
+    alert_email: Optional[str] = ""
+
+class AccountActionRequest(BaseModel):
+    email: str
+
 # Phishing Detection Engine
 class PhishingDetector:
     def __init__(self):
