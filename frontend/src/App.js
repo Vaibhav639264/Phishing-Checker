@@ -978,12 +978,31 @@ ${summary.threat_level === 'CRITICAL' || summary.threat_level === 'HIGH' ?
           <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">🚫 Blocked Emails ({blockedEmails.length})</h3>
-              <button
-                onClick={() => setShowBlockedEmails(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={downloadReport}
+                  disabled={reportLoading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+                >
+                  {reportLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📊</span>
+                      <span>Download Report</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowBlockedEmails(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             
             <div className="border border-gray-200 rounded-lg">
