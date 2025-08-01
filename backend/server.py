@@ -809,6 +809,301 @@ async def start_imap_monitoring_task(alert_email: str, check_interval: int = 60)
         logger.error(f"IMAP monitoring task failed: {str(e)}")
         email_monitor.monitoring = False
 
+@api_router.post("/imap/manual-scan")
+async def manual_scan_imap(request: ManualScanRequest):
+    """Manually scan recent emails via IMAP"""
+    try:
+        if not imap_service.email_address or not imap_service.app_password:
+            raise HTTPException(status_code=400, detail="IMAP not configured. Please setup IMAP connection first.")
+        
+        logger.info(f"🔍 Starting manual scan for {request.max_emails} emails")
+        
+        # Get recent emails
+        emails = await imap_service.get_recent_emails(request.max_emails)
+        
+        if not emails:
+            return {
+                'success': True,
+                'message': 'No emails found to scan',
+                'results': {
+                    'total_scanned': 0,
+                    'threats_found': 0,
+                    'actions_taken': 0,
+                    'findings': []
+                }
+            }
+        
+        results = {
+            'total_scanned': len(emails),
+            'threats_found': 0,
+            'actions_taken': 0,
+            'findings': []
+        }
+        
+        logger.info(f"📧 Found {len(emails)} emails to scan")
+        
+        for email_data in emails:
+            try:
+                # Convert email data to standard format
+                email_content = f"""From: {email_data.get('from', '')}
+To: {email_data.get('to', '')}
+Subject: {email_data.get('subject', '')}
+Date: {email_data.get('date', '')}
+
+{email_data.get('body', '')}
+"""
+                
+                # Analyze email
+                analysis_result = await detector.analyze_email(
+                    email_content, 
+                    f"manual_scan_{email_data.get('id', 'unknown')}.eml"
+                )
+                
+                threat_level = analysis_result.get('threat_level', 'LOW')
+                
+                if threat_level in ['HIGH', 'CRITICAL', 'MEDIUM']:
+                    results['threats_found'] += 1
+                    
+                    finding = {
+                        'email_id': email_data.get('id'),
+                        'from': email_data.get('from'),
+                        'subject': email_data.get('subject'),
+                        'threat_level': threat_level,
+                        'analysis': analysis_result,
+                        'actions_taken': False
+                    }
+                    
+                    # Take actions for HIGH/CRITICAL threats
+                    if threat_level in ['HIGH', 'CRITICAL']:
+                        # Mark as spam
+                        spam_result = await imap_service.mark_as_spam(email_data.get('id'))
+                        if spam_result:
+                            results['actions_taken'] += 1
+                            finding['actions_taken'] = True
+                            logger.info(f"✅ Marked email as spam: {email_data.get('subject')}")
+                    
+                    results['findings'].append(finding)
+                    
+                    # Store analysis result
+                    email_analysis = EmailAnalysisResult(
+                        filename=f"manual_scan_{email_data.get('id', 'unknown')}.eml",
+                        analysis_result={
+                            **analysis_result,
+                            'email_data': email_data,
+                            'scan_type': 'manual'
+                        },
+                        threat_level=threat_level
+                    )
+                    
+                    await db.email_analyses.insert_one(email_analysis.dict())
+                    
+                logger.info(f"📧 Scanned email: {email_data.get('subject')} - Threat: {threat_level}")
+                
+            except Exception as e:
+                logger.error(f"❌ Error scanning email {email_data.get('id')}: {str(e)}")
+                continue
+        
+        logger.info(f"✅ Manual scan completed: {results['threats_found']} threats found in {results['total_scanned']} emails")
+        
+        return {
+            'success': True,
+            'message': f'Scanned {results["total_scanned"]} emails, found {results["threats_found"]} threats',
+            'results': results
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Manual scan failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Manual scan failed: {str(e)}")
+
+@api_router.post("/imap/start-monitoring")
+async def start_imap_monitoring_fixed(request: MonitoringRequest, background_tasks: BackgroundTasks):
+    """Start real-time IMAP email monitoring (FIXED)"""
+    try:
+        if not imap_service.email_address or not imap_service.app_password:
+            raise HTTPException(status_code=400, detail="IMAP not configured. Please setup IMAP connection first.")
+        
+        if email_monitor.monitoring:
+            return {
+                'success': False,
+                'message': 'Monitoring is already active'
+            }
+        
+        # Initialize email monitor properly
+        email_monitor.gmail_service = imap_service
+        email_monitor.alert_email = request.alert_email
+        
+        logger.info(f"🚀 Starting real-time monitoring with alert email: {request.alert_email}")
+        
+        # Start monitoring in background
+        background_tasks.add_task(
+            start_fixed_monitoring_task,
+            alert_email=request.alert_email,
+            check_interval=request.check_interval
+        )
+        
+        # Mark as active
+        email_monitor.monitoring = True
+        
+        return {
+            'success': True,
+            'message': f'Real-time IMAP monitoring started (checking every {request.check_interval} seconds)',
+            'alert_email': request.alert_email,
+            'monitoring_active': True
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to start monitoring: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start monitoring: {str(e)}")
+
+async def start_fixed_monitoring_task(alert_email: str, check_interval: int = 60):
+    """Fixed background monitoring task"""
+    try:
+        logger.info(f"🔍 Starting fixed monitoring task with {check_interval}s intervals")
+        
+        last_check_count = 0
+        consecutive_errors = 0
+        
+        while email_monitor.monitoring:
+            try:
+                logger.info(f"📡 Checking for new emails... (Alert: {alert_email})")
+                
+                # Initialize fresh connection for each check
+                check_imap = IMAPService(imap_service.email_address, imap_service.app_password)
+                
+                # Get current message count
+                success = await check_imap.initialize()
+                if not success:
+                    logger.error("❌ Failed to initialize IMAP for monitoring")
+                    consecutive_errors += 1
+                    if consecutive_errors > 5:
+                        logger.error("❌ Too many consecutive errors, stopping monitoring")
+                        break
+                    await asyncio.sleep(check_interval)
+                    continue
+                
+                # Select inbox and get message count
+                check_imap.mail.select('INBOX')
+                status, messages = check_imap.mail.search(None, 'ALL')
+                current_count = len(messages[0].split()) if messages[0] else 0
+                
+                logger.info(f"📧 Current inbox count: {current_count}, Last check: {last_check_count}")
+                
+                # Check for new emails
+                if current_count > last_check_count:
+                    new_count = current_count - last_check_count
+                    logger.info(f"🆕 Found {new_count} new emails to process")
+                    
+                    # Get recent emails
+                    recent_emails = await check_imap.get_recent_emails(new_count + 2)  # Get a few extra
+                    
+                    # Process each email
+                    for email_data in recent_emails[:new_count]:
+                        try:
+                            await process_monitored_email(email_data, alert_email)
+                        except Exception as e:
+                            logger.error(f"❌ Error processing email: {str(e)}")
+                            continue
+                
+                last_check_count = current_count
+                consecutive_errors = 0  # Reset error counter on success
+                check_imap.close_connection()
+                
+                logger.info(f"✅ Monitoring check completed. Next check in {check_interval}s")
+                await asyncio.sleep(check_interval)
+                
+            except Exception as e:
+                logger.error(f"❌ Error in monitoring loop: {str(e)}")
+                consecutive_errors += 1
+                if consecutive_errors > 5:
+                    logger.error("❌ Too many consecutive errors, stopping monitoring")
+                    break
+                await asyncio.sleep(check_interval)
+        
+        logger.info("⏹️ Monitoring task stopped")
+        email_monitor.monitoring = False
+        
+    except Exception as e:
+        logger.error(f"❌ Monitoring task failed: {str(e)}")
+        email_monitor.monitoring = False
+
+async def process_monitored_email(email_data: Dict[str, Any], alert_email: str):
+    """Process a single monitored email"""
+    try:
+        logger.info(f"🔍 Processing monitored email: {email_data.get('subject', 'No subject')}")
+        logger.info(f"📧 From: {email_data.get('from', 'Unknown')}")
+        
+        # Convert to standard email format
+        email_content = f"""From: {email_data.get('from', '')}
+To: {email_data.get('to', '')}
+Subject: {email_data.get('subject', '')}
+Date: {email_data.get('date', '')}
+
+{email_data.get('body', '')}
+"""
+        
+        # Analyze with phishing detector
+        analysis_result = await detector.analyze_email(
+            email_content, 
+            f"monitored_{email_data.get('id', 'unknown')}.eml"
+        )
+        
+        threat_level = analysis_result.get('threat_level', 'LOW')
+        logger.info(f"🎯 Threat level detected: {threat_level}")
+        
+        # Store analysis result
+        email_analysis = EmailAnalysisResult(
+            filename=f"monitored_{email_data.get('id', 'unknown')}.eml",
+            analysis_result={
+                **analysis_result,
+                'email_data': email_data,
+                'scan_type': 'real_time_monitoring',
+                'monitored_account': imap_service.email_address
+            },
+            threat_level=threat_level
+        )
+        
+        await db.email_analyses.insert_one(email_analysis.dict())
+        
+        # Take action for threats
+        if threat_level in ['HIGH', 'CRITICAL']:
+            logger.warning(f"🚨 HIGH/CRITICAL threat detected!")
+            logger.warning(f"📧 Subject: {email_data.get('subject')}")
+            logger.warning(f"👤 From: {email_data.get('from')}")
+            
+            # Mark as spam
+            spam_result = await imap_service.mark_as_spam(email_data.get('id'))
+            logger.info(f"📬 Mark as spam: {'✅ Success' if spam_result else '❌ Failed'}")
+            
+            # Send alert
+            if alert_email:
+                threat_details = {
+                    **analysis_result,
+                    **email_data,
+                    'monitored_account': imap_service.email_address
+                }
+                
+                alert_result = await imap_service.send_alert_email(threat_details, alert_email)
+                logger.info(f"📧 Alert sent: {'✅ Success' if alert_result else '❌ Failed'}")
+            
+        elif threat_level == 'MEDIUM':
+            logger.info(f"⚠️ MEDIUM threat detected - sending alert only")
+            
+            if alert_email:
+                threat_details = {
+                    **analysis_result,
+                    **email_data,
+                    'monitored_account': imap_service.email_address
+                }
+                
+                alert_result = await imap_service.send_alert_email(threat_details, alert_email)
+                logger.info(f"📧 Alert sent: {'✅ Success' if alert_result else '❌ Failed'}")
+        
+        else:
+            logger.debug(f"✅ Email appears legitimate (threat level: {threat_level})")
+            
+    except Exception as e:
+        logger.error(f"❌ Error processing monitored email: {str(e)}")
+
 @api_router.get("/monitoring/stats")
 async def get_monitoring_stats():
     """Get monitoring dashboard statistics"""
