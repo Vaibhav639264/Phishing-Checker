@@ -100,22 +100,36 @@ async def analyze_uploaded_email(file: UploadFile = File(...)):
             email_content, email_data, file.filename
         )
         
-        # Store in database
+        # Store in database (ensure all fields are serializable)
         analysis_result['id'] = str(uuid.uuid4())
         analysis_result['timestamp'] = datetime.utcnow().isoformat()
         
-        await db.email_analyses.insert_one(analysis_result)
+        # Convert any ObjectIds to strings and ensure clean storage
+        clean_result = {}
+        for key, value in analysis_result.items():
+            if hasattr(value, '__dict__'):
+                clean_result[key] = str(value)
+            else:
+                clean_result[key] = value
+        
+        await db.email_analyses.insert_one(clean_result)
         
         logger.info(f"✅ Analysis complete: {analysis_result['threat_level']} threat level")
         
         # Return in the correct format for EmailAnalysisResult
-        return EmailAnalysisResult(
-            id=analysis_result['id'],
-            filename=file.filename,
-            analysis_result=analysis_result,
-            threat_level=analysis_result['threat_level'],
-            timestamp=datetime.utcnow()
-        )
+        return {
+            'id': analysis_result['id'],
+            'filename': file.filename,
+            'threat_level': analysis_result['threat_level'],
+            'confidence_score': analysis_result.get('confidence_score', 0),
+            'detection_reasons': analysis_result.get('detection_reasons', []),
+            'email_info': analysis_result.get('email_info', {}),
+            'timestamp': analysis_result['timestamp'],
+            'threat_indicators': analysis_result.get('threat_indicators', []),
+            'url_analysis': analysis_result.get('url_analysis', []),
+            'brand_impersonation': analysis_result.get('brand_impersonation', []),
+            'llm_analysis': analysis_result.get('llm_analysis', '')
+        }
         
     except Exception as e:
         logger.error(f"❌ Email analysis failed: {str(e)}")
