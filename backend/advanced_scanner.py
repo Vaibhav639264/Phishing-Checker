@@ -1,11 +1,9 @@
 import hashlib
 import re
-import requests
 import asyncio
 import logging
 from typing import Dict, List, Any, Optional
 import base64
-import magic
 import dns.resolver
 import socket
 from urllib.parse import urlparse
