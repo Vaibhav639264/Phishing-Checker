@@ -421,6 +421,126 @@ async def get_analysis(analysis_id: str):
         raise HTTPException(status_code=404, detail="Analysis not found")
     return EmailAnalysisResult(**analysis)
 
+# Gmail Integration Endpoints
+@api_router.post("/gmail/setup")
+async def setup_gmail(request: GmailSetupRequest):
+    """Setup Gmail API credentials"""
+    try:
+        # Update environment variables (in production, use secure storage)
+        os.environ['GMAIL_CLIENT_ID'] = request.client_id
+        os.environ['GMAIL_CLIENT_SECRET'] = request.client_secret
+        
+        if request.refresh_token:
+            os.environ['GMAIL_REFRESH_TOKEN'] = request.refresh_token
+            
+            # Test connection
+            test_result = await gmail_service.test_connection()
+            return {
+                'success': True,
+                'message': 'Gmail credentials configured successfully',
+                'connection_test': test_result
+            }
+        else:
+            # Generate authorization URL for getting refresh token
+            auth_url = gmail_service.generate_auth_url()
+            return {
+                'success': True,
+                'message': 'Please visit the authorization URL to complete setup',
+                'auth_url': auth_url,
+                'instructions': 'Visit the URL, authorize the app, and provide the refresh token'
+            }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gmail setup failed: {str(e)}")
+
+@api_router.get("/gmail/status")
+async def gmail_status():
+    """Check Gmail integration status"""
+    try:
+        test_result = await gmail_service.test_connection()
+        
+        return {
+            'configured': test_result['status'] == 'success',
+            'monitoring_active': email_monitor.monitoring,
+            **test_result
+        }
+        
+    except Exception as e:
+        return {
+            'configured': False,
+            'monitoring_active': False,
+            'status': 'error',
+            'message': str(e)
+        }
+
+@api_router.post("/gmail/start-monitoring")
+async def start_monitoring(request: MonitoringRequest, background_tasks: BackgroundTasks):
+    """Start real-time email monitoring"""
+    try:
+        if email_monitor.monitoring:
+            return {
+                'success': False,
+                'message': 'Monitoring is already active'
+            }
+        
+        # Start monitoring in background
+        background_tasks.add_task(
+            email_monitor.start_monitoring,
+            alert_email=request.alert_email,
+            check_interval=request.check_interval
+        )
+        
+        return {
+            'success': True,
+            'message': f'Real-time monitoring started (checking every {request.check_interval} seconds)',
+            'alert_email': request.alert_email
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start monitoring: {str(e)}")
+
+@api_router.post("/gmail/stop-monitoring")
+async def stop_monitoring():
+    """Stop real-time email monitoring"""
+    try:
+        await email_monitor.stop_monitoring()
+        return {
+            'success': True,
+            'message': 'Email monitoring stopped'
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stop monitoring: {str(e)}")
+
+@api_router.post("/gmail/manual-scan")
+async def manual_scan(request: ManualScanRequest):
+    """Manually scan recent emails"""
+    try:
+        results = await email_monitor.manual_scan_recent(request.max_emails)
+        
+        return {
+            'success': True,
+            'message': f'Scanned {results.get("total_scanned", 0)} emails',
+            'results': results
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Manual scan failed: {str(e)}")
+
+@api_router.get("/gmail/recent-emails")
+async def get_recent_emails(max_results: int = 10):
+    """Get recent emails from Gmail"""
+    try:
+        emails = await gmail_service.get_recent_emails(max_results)
+        return {
+            'success': True,
+            'emails': emails,
+            'count': len(emails)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get emails: {str(e)}")
+
 # Legacy routes
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
