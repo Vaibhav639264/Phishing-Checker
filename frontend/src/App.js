@@ -303,6 +303,25 @@ function App() {
     }
   };
 
+  const fetchAnalysisDetails = async (analysisId) => {
+    try {
+      setAnalysisDetailsLoading(true);
+      const response = await axios.get(`${API}/analyses/${analysisId}`);
+      
+      if (response.data.success) {
+        setSelectedAnalysis(response.data.analysis);
+        setShowAnalysisDetails(true);
+      } else {
+        alert('Failed to load analysis details');
+      }
+    } catch (error) {
+      console.error('Error fetching analysis details:', error);
+      alert(`Failed to load analysis details: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setAnalysisDetailsLoading(false);
+    }
+  };
+
   const manualScan = async () => {
     try {
       setManualScanLoading(true);
