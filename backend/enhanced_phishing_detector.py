@@ -302,17 +302,51 @@ class EnhancedPhishingDetector:
         for url in set(all_urls):  # Remove duplicates
             url_score = 0
             url_analysis = {
-                'url': url,
+                'original_url': url,
                 'issues': [],
-                'risk_level': 'LOW'
+                'risk_level': 'LOW',
+                'redirections': [],
+                'final_url': url
             }
             
-            # Check against suspicious domain patterns
-            for pattern in self.suspicious_domain_patterns:
-                if re.search(pattern, url, re.IGNORECASE):
-                    url_score += 35
-                    url_analysis['issues'].append(f'Matches suspicious pattern: {pattern}')
-                    url_analysis['risk_level'] = 'CRITICAL'
+            # Check URL redirections
+            redirections, final_url = check_url_redirections(url)
+            if redirections:
+                url_analysis['redirections'] = redirections
+                url_analysis['final_url'] = final_url
+                
+                # Analyze redirection chain for suspicious patterns
+                for redirect in redirections:
+                    if redirect['to'].lower() != redirect['from'].lower():
+                        # Check if redirection goes to suspicious domain
+                        for pattern in self.suspicious_domain_patterns:
+                            if re.search(pattern, redirect['to'], re.IGNORECASE):
+                                url_score += 25
+                                url_analysis['issues'].append(f'Redirects to suspicious domain: {redirect["to"]}')
+                                url_analysis['risk_level'] = 'HIGH'
+                        
+                        # Check for domain switching (potential hiding)
+                        from_domain = redirect['from'].split('/')[2] if '//' in redirect['from'] else redirect['from'].split('/')[0]
+                        to_domain = redirect['to'].split('/')[2] if '//' in redirect['to'] else redirect['to'].split('/')[0]
+                        
+                        if from_domain.lower() != to_domain.lower():
+                            url_score += 15
+                            url_analysis['issues'].append(f'Domain change in redirection: {from_domain} → {to_domain}')
+                
+                if len(redirections) > 3:
+                    url_score += 20
+                    url_analysis['issues'].append(f'Excessive redirections: {len(redirections)} steps')
+                    url_analysis['risk_level'] = 'HIGH'
+            
+            # Check against suspicious domain patterns (both original and final URL)
+            urls_to_check = [url, final_url] if final_url != url else [url]
+            
+            for check_url in urls_to_check:
+                for pattern in self.suspicious_domain_patterns:
+                    if re.search(pattern, check_url, re.IGNORECASE):
+                        url_score += 35
+                        url_analysis['issues'].append(f'Matches suspicious pattern: {pattern}')
+                        url_analysis['risk_level'] = 'CRITICAL'
             
             # Check TLD
             for tld in self.suspicious_tlds:
